@@ -4,6 +4,7 @@ Usage: python3 months.py [--corpus text8.txt] [--out months.pdf]
 Writes months.pdf and months.png by default.
 """
 import argparse
+import warnings
 import matplotlib
 matplotlib.use("Agg")
 matplotlib.rcParams["pdf.fonttype"] = 42   # TrueType (crisp in LaTeX)
@@ -279,7 +280,9 @@ def main():
     h_emp = plt.Line2D([], [], marker="o", ls="", color="k", ms=11)
     h_th = plt.Line2D([], [], marker="o", ls="", markerfacecolor="none",
                       markeredgecolor="k", ms=12, markeredgewidth=2)
-    fig.tight_layout(rect=(0, 0.16, 1, 0.92))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        fig.tight_layout(rect=(0, 0.16, 1, 0.92))
     fig.subplots_adjust(wspace=0.30)
     # shared (c) title above both plane panels; legend centered under them
     pos2, pos3 = axs[2].get_position(), axs[3].get_position()
