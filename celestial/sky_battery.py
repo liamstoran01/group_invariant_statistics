@@ -76,24 +76,21 @@ def layer_battery(Xl, lat, lon, xyz, lmax, nperm=60, rng=None):
         null.append(wr2(m_p, binfit(ap, m_p, wp, ap), wp))
     null95 = float(np.quantile(null, 0.95))
 
-    # modes + degree content
-    lam, U = np.linalg.eigh(0.5 * (M + M.T))
-    o = np.argsort(-np.abs(lam))
-    lam, U = lam[o], U[:, o]
+    # modes + degree content (U in the sqrt(w) frame)
+    lam, U = sk.weighted_modes(M, sw)
     bases = sk.weighted_degree_bases(sk.real_harmonics(lat, lon, lmax), w)
 
     def denergy(v):
-        vw = sw[:, 0] * v
-        vw /= np.linalg.norm(vw)
+        vw = v / np.linalg.norm(v)
         return {l: float(np.sum((bases[l].T @ vw) ** 2))
-                for l in range(lmax + 1)}
+                for l in range(1, lmax + 1)}
 
     modes = [denergy(U[:, k]) for k in range(min(16, n - 1))]
 
-    # decode
+    # decode (U is already in the sqrt(w) frame)
     E = U[:, :16] * np.sqrt(np.abs(lam[:16]))
-    beta, *_ = np.linalg.lstsq(sw * E, sw * xyz, rcond=None)
-    xyz_hat = E @ beta
+    beta, *_ = np.linalg.lstsq(E, sw * xyz, rcond=None)
+    xyz_hat = (E @ beta) / sw
     mu = (w[:, None] * xyz).sum(0) / w.sum()
     r2_dec = 1 - (w[:, None] * (xyz - xyz_hat) ** 2).sum() \
         / (w[:, None] * (xyz - mu) ** 2).sum()
@@ -110,7 +107,7 @@ def layer_battery(Xl, lat, lon, xyz, lmax, nperm=60, rng=None):
     c_std = np.sqrt(np.maximum(m2 - m1 ** 2, 0.0))
     C = sk.theory_matrix(c_fit, cosT)
     lam_t, U_t = sk.weighted_modes(C, sw)
-    Uw_emp, _ = np.linalg.qr(sw * U[:, :16])
+    Uw_emp, _ = np.linalg.qr(U[:, :16])
     s3 = np.linalg.svd(U_t[:, :3].T @ Uw_emp, compute_uv=False)
     s8 = np.linalg.svd(U_t[:, :8].T @ Uw_emp, compute_uv=False)
     Pl = np.array([eval_legendre(l, sk.XQ) for l in range(lmax + 1)])
@@ -160,15 +157,40 @@ def main():
     print(f"  decode R^2 (weighted): {r['r2_dec']:.3f}")
     print(f"  canon^2 vs zonal theory: top3 {r['c3']:.2f}, "
           f"top8 {r['c8']:.2f}")
-    print(f"  Funk-Hecke lambda_l: {np.round(r['lam_fh'][1:], 3)}")
-    print(f"  {'mode':>5} {'lam':>7}  degree energies (l=0..{args.lmax})")
+    print(f"  lambda_l: {np.round(r['lam_fh'][1:], 3)}")
+    print(f"  {'mode':>5} {'lam':>7}  degree energies (l=1..{args.lmax})")
     for k, m in enumerate(r["modes"][:10]):
         best_l = max(m, key=m.get)
         print(f"  {k+1:>5} {r['lam'][k]:>7.2f}  " +
-              " ".join(f"{m[l]:.2f}" for l in range(args.lmax + 1)) +
+              " ".join(f"{m[l]:.2f}" for l in range(1, args.lmax + 1)) +
               f"   -> l={best_l} ({m[best_l]:.2f})")
 
-    # ---------------- figure ----------------
+    # ---------------- figures ----------------
+    write_battery = args.out is not None or args.heatmap_out is None
+    if write_battery:
+        _draw_battery_figure(sweep, best, r, args, out_base)
+
+    if args.heatmap_out:
+        Pm = np.array([[m[l] for l in range(1, args.lmax + 1)]
+                       for m in r["modes"]])
+        hm_base = os.path.splitext(args.heatmap_out)[0]
+        os.makedirs(os.path.dirname(hm_base) or ".", exist_ok=True)
+        fig_h, ax = plt.subplots(figsize=(5, 6))
+        im = ax.imshow(Pm, aspect="auto", cmap="viridis", vmin=0, vmax=1)
+        ax.set_xticks(range(args.lmax))
+        ax.set_xticklabels([f"$\\ell$={l}" for l in range(1, args.lmax + 1)])
+        ax.set_yticks(range(Pm.shape[0]))
+        ax.set_yticklabels([str(k + 1) for k in range(Pm.shape[0])])
+        ax.set_ylabel("empirical mode")
+        plt.colorbar(im, ax=ax, fraction=0.046, label="degree purity")
+        ax.set_title(f"{args.model}, layer {best}")
+        fig_h.tight_layout()
+        fig_h.savefig(hm_base + ".pdf", bbox_inches="tight")
+        fig_h.savefig(hm_base + ".png", dpi=200, bbox_inches="tight")
+        print(f"saved -> {hm_base}.pdf + {hm_base}.png")
+
+
+def _draw_battery_figure(sweep, best, r, args, out_base):
     fig = plt.figure(figsize=(16, 9))
     ax = fig.add_subplot(2, 2, 1)
     ls, isos, decs, c3s = zip(*sweep)
@@ -187,8 +209,8 @@ def main():
         ax.bar(k + 1, r["lam"][k], color=colors[bl],
                alpha=0.35 + 0.65 * m[bl])
     handles = [plt.Rectangle((0, 0), 1, 1, color=colors[l])
-               for l in range(args.lmax + 1)]
-    ax.legend(handles, [f"$\\ell$={l}" for l in range(args.lmax + 1)],
+               for l in range(1, args.lmax + 1)]
+    ax.legend(handles, [f"$\\ell$={l}" for l in range(1, args.lmax + 1)],
               fontsize=8)
     ax.set_xlabel("empirical mode")
     ax.set_ylabel("eigenvalue")
@@ -206,11 +228,11 @@ def main():
                  f"{r['null95']:.2f})")
 
     ax = fig.add_subplot(2, 2, 4)
-    Pm = np.array([[m[l] for l in range(args.lmax + 1)]
+    Pm = np.array([[m[l] for l in range(1, args.lmax + 1)]
                    for m in r["modes"]])
     im = ax.imshow(Pm, aspect="auto", cmap="viridis", vmin=0, vmax=1)
-    ax.set_xticks(range(args.lmax + 1))
-    ax.set_xticklabels([f"$\\ell$={l}" for l in range(args.lmax + 1)])
+    ax.set_xticks(range(args.lmax))
+    ax.set_xticklabels([f"$\\ell$={l}" for l in range(1, args.lmax + 1)])
     ax.set_ylabel("empirical mode")
     plt.colorbar(im, ax=ax, fraction=0.046)
     ax.set_title("(d) degree purity of the modes")
@@ -220,23 +242,6 @@ def main():
     fig.savefig(pdf_path, bbox_inches="tight")
     fig.savefig(png_path, dpi=200, bbox_inches="tight")
     print(f"saved -> {pdf_path} + {png_path}")
-
-    if args.heatmap_out:
-        hm_base = os.path.splitext(args.heatmap_out)[0]
-        os.makedirs(os.path.dirname(hm_base) or ".", exist_ok=True)
-        fig_h, ax = plt.subplots(figsize=(5, 6))
-        im = ax.imshow(Pm, aspect="auto", cmap="viridis", vmin=0, vmax=1)
-        ax.set_xticks(range(args.lmax + 1))
-        ax.set_xticklabels([f"$\\ell$={l}" for l in range(args.lmax + 1)])
-        ax.set_yticks(range(Pm.shape[0]))
-        ax.set_yticklabels([str(k + 1) for k in range(Pm.shape[0])])
-        ax.set_ylabel("empirical mode")
-        plt.colorbar(im, ax=ax, fraction=0.046, label="degree purity")
-        ax.set_title(f"{args.model}, layer {best}")
-        fig_h.tight_layout()
-        fig_h.savefig(hm_base + ".pdf", bbox_inches="tight")
-        fig_h.savefig(hm_base + ".png", dpi=200, bbox_inches="tight")
-        print(f"saved -> {hm_base}.pdf + {hm_base}.png")
 
 
 if __name__ == "__main__":

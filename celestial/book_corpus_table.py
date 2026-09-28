@@ -68,7 +68,8 @@ def main():
     # LLM reference kernel (graded-validation target)
     latL, lonL, xyzL, lamL, UL, _ = sk.llm_modes()
     wL, cosL = sk.density_weights(xyzL)
-    E_L = UL * np.sqrt(np.abs(lamL))
+    swL = np.sqrt(wL)[:, None]
+    E_L = (UL / swL) * np.sqrt(np.abs(lamL))
     G = E_L @ E_L.T
     c_llm = sk.fit_zonal(G / np.sqrt(np.mean(np.diag(G) ** 2)), cosL, wL)
     z = lambda v: (v - v.mean()) / v.std()

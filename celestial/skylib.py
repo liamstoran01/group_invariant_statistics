@@ -381,13 +381,19 @@ def load_activations(model):
 
 
 def llm_modes(model="mistrallarge123b", layer=72, k=16):
-    """Top-k Gram eigenmodes of the object-mean activations at a layer."""
+    """Top-k Gram eigenmodes of the object-mean activations at a layer.
+
+    Feature-centers the activations, then eigen-decomposes the Gram in
+    the density-weighted frame (same convention as weighted_modes: U
+    lives in the sqrt(w) coordinates).
+    """
     X, lat, lon, xyz, names = load_activations(model)
     Xc = X[layer] - X[layer].mean(0, keepdims=True)
     G = Xc @ Xc.T
-    lam, U = np.linalg.eigh(0.5 * (G + G.T))
-    o = np.argsort(-np.abs(lam))[:k]
-    return lat, lon, xyz, lam[o], U[:, o], names
+    w, _ = density_weights(xyz)
+    sw = np.sqrt(w)[:, None]
+    lam, U = weighted_modes(G, sw, k)
+    return lat, lon, xyz, lam, U, names
 
 
 # ---------------------------------------------------------------------------

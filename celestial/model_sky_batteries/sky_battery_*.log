@@ -1,2 +1,0 @@
-usage: sky_battery.py [-h] [--model MODEL] [--lmax LMAX] [--out OUT]
-sky_battery.py: error: unrecognized arguments: --heatmap-out model_sky_heatmaps/sky_heatmap_*

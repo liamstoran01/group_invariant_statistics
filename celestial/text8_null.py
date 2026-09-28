@@ -128,6 +128,9 @@ def main():
     X, latL, lonL, oxyz, onames = sk.load_activations(args.model)
     Xl = X[72] - X[72].mean(0)
     G = Xl @ Xl.T
+    wL, _ = sk.density_weights(oxyz)
+    Pw = np.eye(len(G)) - np.outer(np.ones(len(G)), wL) / wL.sum()
+    G = Pw @ G @ Pw.T
     G = G / np.sqrt(np.mean(np.diag(G) ** 2))
     CTf = np.clip(oxyz @ oxyz.T, -1, 1)
     iuf = np.triu_indices(len(G), k=1)
