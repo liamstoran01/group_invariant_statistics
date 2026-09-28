@@ -1,0 +1,26 @@
+[project]
+name = "group-invariant-statistics"
+version = "0.1.0"
+description = "Lean env for sky_sphere_cleaned, music, and pringle paper scripts"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy",
+    "scipy>=1.15",
+    "matplotlib",
+    "scikit-learn",
+    "torch==2.5.1",
+    "transformers",
+    "music21",
+    "tqdm",
+    "adjusttext",
+]
+
+# Same CUDA 12.1 wheels as LLM_manifolds/.venv (TITAN RTX).
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu121" }
