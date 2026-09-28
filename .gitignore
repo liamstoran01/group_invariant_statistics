@@ -15,5 +15,9 @@ text8.txt
 chord_sequences_full.json
 
 # Generated figures
-months.pdf
-months.png
+*.pdf
+*.png
+
+# Generated JSON (keep the ChordBERT/Bach label sidecar)
+*.json
+!label_positions_heatmap_chordbert.json
