@@ -1,33 +1,33 @@
 """
 text8_null.py -- negative control: a general corpus need not
-carry sky-sphere statistics. Runs the full selection battery on text8
+carry sky-sphere statistics. Runs the selection battery on text8
 (17M tokens of cleaned Wikipedia; ~130x the star-guide corpus):
 
   * mention scan of all 188 sky-object names (uni- and bigrams) with the
     top-count table exhibiting the polysemy problem ('algol' the
     programming language, 'peacock' the bird, 'mimosa' the plant);
-  * stage 1, narrative coherence: median angular hop between successive
-    DISTINCT object mentions vs the shuffled-mention null (z);
-  * stage 2, Funk-Hecke dipole: lambda_1 of the corpus M* kernel with a
-    one-sided location-permutation p (the gate the star guides pass at
-    p <= 0.04);
-  * unified single-gate variant: D = corr(M*_ij, cos theta_ij) with the
-    same location-permutation null (smoothing-free; selects the same
-    four guides and rejects the same negatives as the two-stage);
-  * graded validation: correlation of the text8 kernel with the LLM
-    activation kernel.
+  * coherence: median angular hop between successive DISTINCT object
+    mentions vs the shuffled-mention null (z);
+  * lambda_1 of the corpus M* kernel with a one-sided
+    location-permutation p;
+  * D = corr(M*_ij, cos theta_ij) with the same location-permutation null;
+  * kernel correlation with the LLM activation kernel.
 
 Expected output (text8, Mistral Large 2 layer 72):
-  coherence z ~ 3.5 (below the z >= 5 gate); lambda_1 ~ 0.000, p ~ 0.5;
-  D ~ 0.01, p ~ 0.5; kernel corr r ~ +0.18 (guides: +0.74..+0.86).
+  coherence z ~ 3.5; lambda_1 ~ 0.000, p ~ 0.5;
+  D ~ 0.01, p ~ 0.5; kernel corr r ~ +0.18.
 
-Usage: python3 text8_null.py [--text8 /tmp/text8.txt]
+Usage: python3 text8_null.py [--text8 ../months/text8.txt]
                                       [--model mistrallarge123b]
 """
 import argparse
+from pathlib import Path
+
 import numpy as np
 from scipy.special import eval_legendre
 import skylib as sk
+
+_DEFAULT_TEXT8 = str(Path(__file__).resolve().parent.parent / "months" / "text8.txt")
 
 WIN, ALPHA, MINC = 30, 0.25, 5
 NPERM = 300
@@ -35,7 +35,7 @@ NPERM = 300
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--text8", default="/tmp/text8.txt")
+    ap.add_argument("--text8", default=_DEFAULT_TEXT8)
     ap.add_argument("--model", default="mistrallarge123b")
     args = ap.parse_args()
     rng = np.random.default_rng(0)
@@ -65,7 +65,7 @@ def main():
     print("most frequent (note the polysemy):",
           [(names[i], v) for i, v in top])
 
-    # ---- stage 1: coherence (consecutive same-object pairs masked) ----
+    # coherence (consecutive same-object pairs masked)
     seq = np.array([i for _, i in occ])
     def med(s):
         a, b = s[:-1], s[1:]
@@ -75,9 +75,8 @@ def main():
     obs = med(seq)
     nullc = [med(rng.permutation(seq)) for _ in range(150)]
     z = (np.mean(nullc) - obs) / max(np.std(nullc), 1e-9)
-    print(f"\nstage 1  coherence: median hop {obs:.0f} deg vs shuffled "
-          f"{np.mean(nullc):.0f} deg  ->  z = {z:.1f}  "
-          f"(selection gate: z >= 5)")
+    print(f"coherence: median hop {obs:.0f} deg vs shuffled "
+          f"{np.mean(nullc):.0f} deg, z = {z:.1f}")
 
     # ---- corpus M* over well-counted objects ----
     keep = sorted([i for i, v in cnt.items() if v >= MINC])
@@ -101,7 +100,7 @@ def main():
     CT = np.clip(V @ V.T, -1, 1)
     iu = np.triu_indices(K, k=1)
 
-    # ---- stage 2: Funk-Hecke lambda_1 (NW kernel + P1 projection) ----
+    # Funk-Hecke lambda_1 (NW kernel + P1 projection)
     grid = np.linspace(-0.999, 0.999, 201)
     P1g = eval_legendre(1, grid)
     def lam1(CTm):
@@ -113,11 +112,9 @@ def main():
     nulls = np.array([lam1(CT[np.ix_(pm, pm)])[0]
                       for pm in (rng.permutation(K) for _ in range(NPERM))])
     p1 = float((nulls >= l1).mean())
-    print(f"stage 2  Funk-Hecke dipole ({K} objects): lambda_1 = "
-          f"{l1:+.4f}, one-sided location-permutation p = {p1:.2f}  "
-          f"(gate: p < 0.05; the guides: p <= 0.04)")
+    print(f"lambda_1 = {l1:+.4f}, p = {p1:.2f}")
 
-    # ---- unified single-gate variant ----
+    # D = corr(M*, cos theta)
     zc = lambda v: (v - v.mean()) / max(v.std(), 1e-12)
     D = float(np.mean(zc(M[iu]) * zc(CT[iu])))
     nullD = np.array([float(np.mean(zc(M[iu]) *
@@ -125,9 +122,9 @@ def main():
                       for pm in (rng.permutation(K)
                                  for _ in range(NPERM))])
     pD = float((nullD >= D).mean())
-    print(f"unified  D = corr(M*, cos theta) = {D:+.3f}, p = {pD:.2f}")
+    print(f"D = {D:+.3f}, p = {pD:.2f}")
 
-    # ---- graded validation: kernel corr with the model ----
+    # kernel corr with the model
     X, latL, lonL, oxyz, onames = sk.load_activations(args.model)
     Xl = X[72] - X[72].mean(0)
     G = Xl @ Xl.T
@@ -137,8 +134,7 @@ def main():
     w = np.exp(-0.5 * ((grid[:, None] - CTf[iuf][None, :]) / 0.08) ** 2)
     chat_llm = (w @ G[iuf]) / np.maximum(w.sum(1), 1e-12)
     r = float(np.corrcoef(zc(chat), zc(chat_llm))[0, 1])
-    print(f"graded   kernel corr with {args.model} layer-72 kernel: "
-          f"r = {r:+.2f}  (selected guides: +0.74 to +0.86)")
+    print(f"kernel corr with {args.model} layer-72 kernel: r = {r:+.2f}")
 
 
 if __name__ == "__main__":
