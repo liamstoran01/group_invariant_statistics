@@ -13,6 +13,11 @@ wheels/
 text8.zip
 text8.txt
 chord_sequences_full.json
+astrobooks/
+
+# Generated tables
+book_genre_table.md
+book_genre_table.tex
 
 # Generated figures
 *.pdf
