@@ -1,0 +1,85 @@
+{
+  "sequences": "chord_sequences_full.json",
+  "window": 3,
+  "nested_homogeneity_r2": {
+    "Z12": 0.8295834616743523,
+    "D12": 0.8222715897587032,
+    "conjugacy": 0.43455025351906956,
+    "drop_Z12_to_D12": 0.007311871915649082,
+    "drop_D12_to_conjugacy": 0.3877213362396336
+  },
+  "candidates": [
+    {
+      "name": "T/I",
+      "params": 24,
+      "r2": 0.8222715897587032,
+      "full_overlap": 0.8849478960052086,
+      "full_cosine": 0.9652328557721145,
+      "held_overlap": 0.8171022517968076,
+      "held_cosine": 0.9418569894132597
+    },
+    {
+      "name": "Z12",
+      "params": 48,
+      "r2": 0.8295834616743523,
+      "full_overlap": 0.8875904407999048,
+      "full_cosine": 0.9658699032294855,
+      "held_overlap": 0.8188682292966744,
+      "held_cosine": 0.9424185683732853
+    },
+    {
+      "name": "Z24",
+      "params": 24,
+      "r2": 0.6994052016652863,
+      "full_overlap": 0.6453399940915006,
+      "full_cosine": 0.8477385610550531,
+      "held_overlap": 0.6399319566292616,
+      "held_cosine": 0.841952274385469
+    },
+    {
+      "name": "PLR",
+      "params": 24,
+      "r2": 0.4424171703504692,
+      "full_overlap": 0.5081288328691921,
+      "full_cosine": 0.641265364886378,
+      "held_overlap": 0.5333264296888857,
+      "held_cosine": 0.687082005581552
+    },
+    {
+      "name": "Z12 x Z12",
+      "params": 26,
+      "r2": 0.44038332787363543,
+      "full_overlap": 0.525019447024523,
+      "full_cosine": 0.6632474908511629,
+      "held_overlap": 0.554907524159962,
+      "held_cosine": 0.7143487713385359
+    },
+    {
+      "name": "latent Z12",
+      "params": 12,
+      "r2": 0.6321137797639479,
+      "full_overlap": 0.7974890841822511,
+      "full_cosine": 0.9069755013241716,
+      "held_overlap": 0.742759777926269,
+      "held_cosine": 0.8903736588175611
+    },
+    {
+      "name": "T/I conj. class",
+      "params": 9,
+      "r2": 0.43455025351906956,
+      "full_overlap": 0.5149507594180438,
+      "full_cosine": 0.6616229479986199,
+      "held_overlap": 0.5469260269326831,
+      "held_cosine": 0.7116112194254787
+    },
+    {
+      "name": "RAW",
+      "params": 552,
+      "r2": null,
+      "full_overlap": 1.0,
+      "full_cosine": 1.0,
+      "held_overlap": 0.8185461424853107,
+      "held_cosine": 0.9454311221575219
+    }
+  ]
+}

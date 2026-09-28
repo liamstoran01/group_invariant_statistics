@@ -8,3 +8,12 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Corpora
+text8.zip
+text8.txt
+chord_sequences_full.json
+
+# Generated figures
+months.pdf
+months.png
