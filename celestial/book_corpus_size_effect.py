@@ -4,16 +4,14 @@ book_corpus_size_effect.py
 Self-fit size-effect curve. Observed matrices keep measured M* diagonals
 by default (--no-pin); pass --pin to pin them to the fitted kernel.
 
-(1) SPLIT-HALF ATTENUATION: theory vs each corpus half, halves vs each
-    other, and theory vs full corpus (dipole per-object cos).
-(2) POISSON SIZE-EFFECT CURVE: generate counts from the fitted zonal
-    kernel at multipliers of the books' event level; each sim refits its
-    own kernel and scores against that self-fit theory (always pinned,
-    since sims have no measured diagonal). Observed matrices honor
-    --no-pin / --pin. Modes ordered by decreasing signed λ.
+Poisson simulations generate counts from the fitted zonal kernel at
+multipliers of the books' event level; each sim refits its own kernel
+and scores against that self-fit theory (always pinned, since sims have
+no measured diagonal). Observed matrices honor --no-pin / --pin. Modes
+ordered by decreasing signed λ.
 
-Outputs: printed numbers + appendix_size_effect_2[_nopin].pdf/.png.
-Usage: python3 book_corpus_size_effect.py [--pin] [--n-sims 100]
+Outputs: printed numbers + book_corpus_size_effect.pdf/.png.
+Usage: python3 book_corpus_size_effect.py [--pin] [--n-sims 1000]
 """
 import argparse
 
@@ -47,23 +45,19 @@ def main():
     ap.add_argument("--pin", dest="no_pin", action="store_false",
                     help="pin observed M* diagonals to the fitted "
                          "kernel's c(1)")
-    ap.add_argument("--n-sims", type=int, default=100,
+    ap.add_argument("--n-sims", type=int, default=1000,
                     help="Poisson simulations per multiplier "
-                         "(default: 100)")
+                         "(default: 1000)")
     args = ap.parse_args()
 
     names, lat, lon, streams, canon = sk.corpus_stream()
     keep, Mfull, pfull, Ntok = sk.corpus_mstar(names, streams, canon)
-    nb = len(keep)
     xyzb = sk.unit_vectors(lat[keep], lon[keep])
     wb, cosb = sk.density_weights(xyzb)
     swb = np.sqrt(wb)[:, None]
     c_fit = sk.fit_zonal(Mfull, cosb, wb)
     Cth = sk.theory_matrix(c_fit, cosb)
     lam_t, U_t = weighted_modes_signed(Cth, swb)
-    pin_note = "UNPINNED (measured diagonals)" if args.no_pin \
-        else "diagonals pinned to c(1)"
-    print(f"[{pin_note}; modes by decreasing signed λ]")
 
     def prep(M, c_ref):
         """Pin to the reference kernel's c(1), or keep the measured
@@ -79,14 +73,6 @@ def main():
                                              E, U_e, swb, match="fixed")
         return cm, cmed
 
-    def dip_raw_raw(MA, MB):
-        lamA, UA = weighted_modes_signed(prep(MA, c_fit), swb, 12)
-        lamB, UB = weighted_modes_signed(prep(MB, c_fit), swb, 12)
-        EB = UB * np.sqrt(np.abs(lamB))
-        _, cm, cmed, _, _ = sk.block_compare(UA, lamA, slice(0, 3),
-                                             EB, UB, swb, match="fixed")
-        return cm, cmed
-
     def dip_selffit(M):
         c_s = sk.fit_zonal(M, cosb, wb)
         lam_s, U_s = weighted_modes_signed(sk.theory_matrix(c_s, cosb), swb)
@@ -100,32 +86,14 @@ def main():
                                              E, U_e, swb, match="fixed")
         return cm, cmed
 
-    # ---------------- (1) split-half attenuation ----------------
-    # Chunk each book separately, then pool half-A / half-B streams by
-    # summing W (no cross-book or cross-half windows).
-    CH = 5000
-    halfA, halfB = [], []
-    for stream in streams:
-        chunks = [stream[i:i + CH] for i in range(0, len(stream), CH)]
-        halfA.extend(c for j, c in enumerate(chunks) if j % 2 == 0)
-        halfB.extend(c for j, c in enumerate(chunks) if j % 2 == 1)
-    _, MA, _, _ = sk.corpus_mstar(names, halfA, canon, keep=keep)
-    _, MB, _, _ = sk.corpus_mstar(names, halfB, canon, keep=keep)
-    tA, tB, tF = dip(MA), dip(MB), dip(Mfull)
-    ab = dip_raw_raw(MA, MB)
-    print("(1) SPLIT-HALF ATTENUATION (dipole 3D cos, mean/median):")
-    print(f"    theory -> half A : {tA[0]:.2f}/{tA[1]:.2f}")
-    print(f"    theory -> half B : {tB[0]:.2f}/{tB[1]:.2f}")
-    print(f"    half A -> half B : {ab[0]:.2f}/{ab[1]:.2f}")
-    print(f"    theory -> full   : {tF[0]:.2f}/{tF[1]:.2f}")
+    tF = dip(Mfull)
 
-    # ---------------- (2) Poisson size-effect curve ----------------
     Pexp = np.outer(pfull, pfull) * (2 + Cth) / (2 - Cth)
     lam_counts = np.clip(Pexp * (2.0 * sk.WINDOW * Ntok), 1e-8, None)
     rng = np.random.default_rng(0)
     mults = [0.25, 0.5, 1, 2, 4, 8, 16, 32, 64, 128]
     means, los, his = [], [], []
-    print("\n(2) POISSON SIMULATION under zonal truth "
+    print("POISSON SIMULATION under zonal truth "
           f"(dipole cos, {args.n_sims} draws, self-fit matched):")
     for mult in mults:
         ms = []
@@ -171,13 +139,12 @@ def main():
     ax.tick_params(axis="both", labelsize=16)
     ax.set_ylim(0, 1.02)
     ax.legend(loc="lower right", fontsize=16)
-    suffix = "_nopin" if args.no_pin else ""
     fig.tight_layout()
-    fig.savefig(f"appendix_size_effect_2{suffix}.pdf", bbox_inches="tight")
-    fig.savefig(f"appendix_size_effect_2{suffix}.png", dpi=200,
+    fig.savefig("book_corpus_size_effect.pdf", bbox_inches="tight")
+    fig.savefig("book_corpus_size_effect.png", dpi=200,
                 bbox_inches="tight")
-    print(f"saved -> appendix_size_effect_2{suffix}.pdf + "
-          f"appendix_size_effect_2{suffix}.png")
+    print("saved -> book_corpus_size_effect.pdf + "
+          "book_corpus_size_effect.png")
 
 
 if __name__ == "__main__":
