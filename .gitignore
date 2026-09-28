@@ -22,6 +22,7 @@ book_genre_table.tex
 # Generated figures
 *.pdf
 *.png
+model_sky_heatmaps/
 
 # Generated JSON (keep the ChordBERT/Bach label sidecar and constellation aliases)
 *.json

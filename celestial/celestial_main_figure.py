@@ -59,7 +59,7 @@ def compute_battery(model, lmax):
     r = layer_battery(X[best], lat, lon, xyz, lmax, nperm=100)
     print(f"{model} layer {best}: zonality R^2 = {r['r2_iso']:.3f}  "
           f"(perm null95 {r['null95']:.3f})")
-    print(f"  Funk-Hecke lambda_l: {np.round(r['lam_fh'][1:], 3)}")
+    print(f"  lambda_l: {np.round(r['lam_fh'][1:], 3)}")
     print(f"  {'mode':>5} {'lam':>7}  degree energies (l=0..{lmax})")
     for k, m in enumerate(r["modes"][:4]):
         best_l = max(m, key=m.get)

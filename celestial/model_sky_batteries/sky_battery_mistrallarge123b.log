@@ -1,0 +1,21 @@
+mistrallarge123b: 188 objects, 89 layers, 16 dims/layer
+best layer by decode R^2: 72
+
+layer 72:
+  zonality (isotropy R^2 of activation Gram): 0.490   (perm null95 0.002)
+  decode R^2 (weighted): 0.905
+  canon^2 vs zonal theory: top3 0.91, top8 0.74
+  Funk-Hecke lambda_l: [1.701 0.369 0.041 0.004]
+   mode     lam  degree energies (l=0..4)
+      1   41.56  0.00 0.43 0.01 0.03 0.05   -> l=1 (0.43)
+      2   31.83  0.03 0.61 0.03 0.03 0.02   -> l=1 (0.61)
+      3   27.68  0.00 0.72 0.02 0.03 0.03   -> l=1 (0.72)
+      4   21.96  0.00 0.80 0.08 0.01 0.01   -> l=1 (0.80)
+      5   15.15  0.00 0.11 0.70 0.02 0.03   -> l=2 (0.70)
+      6    9.80  0.02 0.02 0.51 0.04 0.04   -> l=2 (0.51)
+      7    8.33  0.00 0.02 0.67 0.03 0.08   -> l=2 (0.67)
+      8    6.33  0.00 0.02 0.30 0.11 0.07   -> l=2 (0.30)
+      9    5.89  0.00 0.01 0.26 0.31 0.11   -> l=3 (0.31)
+     10    4.88  0.00 0.01 0.17 0.14 0.06   -> l=2 (0.17)
+saved -> model_sky_batteries/sky_battery_mistrallarge123b.pdf + model_sky_batteries/sky_battery_mistrallarge123b.png
+saved -> model_sky_heatmaps/sky_heatmap_mistrallarge123b.pdf + model_sky_heatmaps/sky_heatmap_mistrallarge123b.png

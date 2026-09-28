@@ -1,0 +1,21 @@
+mixtral8x22b: 188 objects, 57 layers, 16 dims/layer
+best layer by decode R^2: 56
+
+layer 56:
+  zonality (isotropy R^2 of activation Gram): 0.238   (perm null95 0.002)
+  decode R^2 (weighted): 0.836
+  canon^2 vs zonal theory: top3 0.84, top8 0.55
+  Funk-Hecke lambda_l: [1.392 0.223 0.008 0.006]
+   mode     lam  degree energies (l=0..4)
+      1   58.75  0.00 0.24 0.02 0.04 0.06   -> l=1 (0.24)
+      2   41.01  0.02 0.55 0.02 0.02 0.02   -> l=1 (0.55)
+      3   19.98  0.00 0.76 0.08 0.01 0.01   -> l=1 (0.76)
+      4   16.82  0.00 0.16 0.45 0.04 0.04   -> l=2 (0.45)
+      5   12.42  0.00 0.62 0.16 0.02 0.01   -> l=1 (0.62)
+      6   11.02  0.01 0.07 0.33 0.05 0.06   -> l=2 (0.33)
+      7    6.76  0.01 0.08 0.29 0.04 0.05   -> l=2 (0.29)
+      8    6.09  0.00 0.00 0.19 0.07 0.07   -> l=2 (0.19)
+      9    3.28  0.00 0.01 0.01 0.06 0.07   -> l=4 (0.07)
+     10    1.72  0.00 0.01 0.08 0.14 0.07   -> l=3 (0.14)
+saved -> model_sky_batteries/sky_battery_mixtral8x22b.pdf + model_sky_batteries/sky_battery_mixtral8x22b.png
+saved -> model_sky_heatmaps/sky_heatmap_mixtral8x22b.pdf + model_sky_heatmaps/sky_heatmap_mixtral8x22b.png

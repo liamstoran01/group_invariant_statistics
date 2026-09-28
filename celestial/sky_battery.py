@@ -129,6 +129,9 @@ def main():
     ap.add_argument("--lmax", type=int, default=4)
     ap.add_argument("--out", default=None,
                     help="output path stem or .pdf/.png (writes both formats)")
+    ap.add_argument("--heatmap-out", default=None,
+                    help="also save the degree-purity heatmap alone to this "
+                         "path stem (writes .pdf and .png)")
     args = ap.parse_args()
     out = args.out or f"sky_battery_{args.model}"
     base, ext = os.path.splitext(out)
@@ -217,6 +220,23 @@ def main():
     fig.savefig(pdf_path, bbox_inches="tight")
     fig.savefig(png_path, dpi=200, bbox_inches="tight")
     print(f"saved -> {pdf_path} + {png_path}")
+
+    if args.heatmap_out:
+        hm_base = os.path.splitext(args.heatmap_out)[0]
+        os.makedirs(os.path.dirname(hm_base) or ".", exist_ok=True)
+        fig_h, ax = plt.subplots(figsize=(5, 6))
+        im = ax.imshow(Pm, aspect="auto", cmap="viridis", vmin=0, vmax=1)
+        ax.set_xticks(range(args.lmax + 1))
+        ax.set_xticklabels([f"$\\ell$={l}" for l in range(args.lmax + 1)])
+        ax.set_yticks(range(Pm.shape[0]))
+        ax.set_yticklabels([str(k + 1) for k in range(Pm.shape[0])])
+        ax.set_ylabel("empirical mode")
+        plt.colorbar(im, ax=ax, fraction=0.046, label="degree purity")
+        ax.set_title(f"{args.model}, layer {best}")
+        fig_h.tight_layout()
+        fig_h.savefig(hm_base + ".pdf", bbox_inches="tight")
+        fig_h.savefig(hm_base + ".png", dpi=200, bbox_inches="tight")
+        print(f"saved -> {hm_base}.pdf + {hm_base}.png")
 
 
 if __name__ == "__main__":

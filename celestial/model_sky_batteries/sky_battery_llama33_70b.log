@@ -1,0 +1,21 @@
+llama33_70b: 188 objects, 81 layers, 16 dims/layer
+best layer by decode R^2: 64
+
+layer 64:
+  zonality (isotropy R^2 of activation Gram): 0.395   (perm null95 0.002)
+  decode R^2 (weighted): 0.898
+  canon^2 vs zonal theory: top3 0.90, top8 0.71
+  Funk-Hecke lambda_l: [1.565 0.343 0.05  0.012]
+   mode     lam  degree energies (l=0..4)
+      1   47.82  0.00 0.65 0.01 0.03 0.03   -> l=1 (0.65)
+      2   34.28  0.02 0.21 0.03 0.04 0.06   -> l=1 (0.21)
+      3   21.89  0.00 0.80 0.04 0.00 0.02   -> l=1 (0.80)
+      4   19.66  0.00 0.23 0.60 0.03 0.02   -> l=2 (0.60)
+      5   14.87  0.00 0.77 0.12 0.01 0.01   -> l=1 (0.77)
+      6   11.18  0.02 0.02 0.51 0.06 0.06   -> l=2 (0.51)
+      7    8.02  0.00 0.02 0.28 0.05 0.10   -> l=2 (0.28)
+      8    6.84  0.00 0.01 0.20 0.21 0.08   -> l=3 (0.21)
+      9    6.08  0.00 0.03 0.13 0.34 0.08   -> l=3 (0.34)
+     10    5.46  0.00 0.00 0.42 0.15 0.05   -> l=2 (0.42)
+saved -> model_sky_batteries/sky_battery_llama33_70b.pdf + model_sky_batteries/sky_battery_llama33_70b.png
+saved -> model_sky_heatmaps/sky_heatmap_llama33_70b.pdf + model_sky_heatmaps/sky_heatmap_llama33_70b.png
