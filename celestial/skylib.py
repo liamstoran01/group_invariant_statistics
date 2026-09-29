@@ -41,7 +41,7 @@ from scipy.special import sph_harm_y
 OBJECTS_CSV = "astro_objects.csv"
 PCA_DIR = "PCA128"
 BOOKS_DIR = "astrobooks"
-CONST_JSON = "geo/constellations.json"
+CONST_JSON = "constellations.json"
 
 HK = 0.35            # on-sphere KDE bandwidth (radians) for density weights
 HB = 0.08            # kernel-smoothing bandwidth in x = cos(theta)

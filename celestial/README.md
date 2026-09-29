@@ -1,7 +1,8 @@
 # Celestial
 
 Run everything from this directory after activating the repo environment
-(see the top-level README). Paths in `skylib.py` are relative to here.
+(see the top-level README). `skylib.py` is a shared library used a across the scripts. Do not run it directly
+Paths in `skylib.py` are relative to here.
 
 ## Data
 
@@ -11,12 +12,12 @@ Run everything from this directory after activating the repo environment
 - `PCA128/{model}_pca128.npz` — per-object mean activations (top-128 PCA
   per layer)
 
-Both are from Berdnikov & Liokumovich, *Decodable sky*
+Both are from Berdnikov & Liokumovich, *Sky sphere representation in language models*
 ([arXiv:2607.27092](https://arxiv.org/abs/2607.27092)). Default model
-id is `mistrallarge123b`. `geo/constellations.json` is only used for
+id is `mistrallarge123b`. `constellations.json` is only used for
 genitive aliases in book tokenization (e.g. “Lyrae”).
 
-**Astronomy books** are not in git. Fetch the 24-book GITenberg corpus:
+**Astronomy books** Fetch the 24-book GITenberg corpus:
 
 ```bash
 ./fetch_astrobooks.sh
@@ -26,18 +27,15 @@ That writes `astrobooks/{gutenberg_id}.txt`. The four star guides used
 in the main analyses are 20769, 36741, 68391, and 57091; the rest feed
 the book-selection table.
 
-`skylib.py` is the shared library (catalogue, \(M^*\), zonal kernels,
-weighted modes). Do not run it directly.
-
 ## Main figure
 
 ```bash
 python3 celestial_main_figure.py
 ```
 
-Zonal kernel, degree-purity heatmap (\(\ell \ge 1\)), and
+Zonal kernel, degree-purity heatmap, and
 Mistral Large 2 vs books 3D overlays. Writes `sky_kernel_overlay.pdf`/`.png`.
-Optional `--sweep` also sweeps across linear decodability from Mistral Large 2.
+Optional `--sweep` also sweeps linear decodability from Mistral Large 2 across layers.
 
 ## Other plots and tables
 
@@ -61,4 +59,4 @@ python3 text8_null.py
   \(D\), and kernel corr; no figure.
 
 `sky_overlay_harmonics.py` is the standalone books | LLM overlay (same
-numerics as panel (c) of the main figure).
+as panel (c) of the main figure).
