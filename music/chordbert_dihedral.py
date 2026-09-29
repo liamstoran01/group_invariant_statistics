@@ -3,7 +3,7 @@ chordbert_dihedral.py
 ---------------------
 Probe ChordBERT (StravynDynamics/ChordBert, DeBERTa-v2 MLM over
 Chordonomicon) for D12 structure in its layer-wise activations, using the
-same metrics as the paper's Bach/QWEM analysis (via chordlib).
+same metrics as the paper's Bach analysis (via chordlib).
 
 Pipeline, per layer L:
   1. Feed chord progressions; mean-pool the hidden state at every
@@ -16,14 +16,16 @@ Pipeline, per layer L:
      kernel; isotypic energies (subspace overlap), per-chord cosines
      after Procrustes; angular step/semitone of the leading plane
      (150 deg <-> fifths / E5).
-  5. Figure: PC1-PC2 of every layer (majors blue, minors red), saved to
-     --fig (default chordbert_pcs.png/.pdf).
+  5. Cache activations + per-layer Grams to --save_npz
+     (default chordbert_grams.npz) for heatmap_chordbert.py.
+  6. E5 isotypic-purity heatmap of empirical modes across layers
+     (--purity_fig, default chordbert_e5_purity.png/.pdf).
 
 Contexts: either your Bach JSON (--sequences chord_sequences_full.json)
 or a plain text file with one space-separated progression per line
 (e.g. dumped from Chordonomicon). Defaults to Bach if present.
 
-Run locally (needs: pip install torch transformers):
+Usage example:
   python3 chordbert_dihedral.py --sequences chord_sequences_full.json
 """
 import argparse
@@ -43,10 +45,6 @@ MODEL_ID = "StravynDynamics/ChordBert"
 MAJ_CANDS = ["{n}", "{n}maj", "{n}:maj", "{n}M"]
 MIN_CANDS = ["{n}m", "{n}min", "{n}:min"]
 ENHARM = {"C#": "Db", "D#": "Eb", "F#": "Gb", "G#": "Ab", "A#": "Bb"}
-
-# Standard shorthand: uppercase = major, lowercase = minor.
-SHORT_NAMES = cl.NOTE + [n.lower() for n in cl.NOTE]
-
 
 def resolve_triad_tokens(tokenizer):
     """Map the 24 chordlib triads to single vocab ids (None if absent)."""
@@ -228,9 +226,6 @@ def analyze_layer(M, k_planes=3, e5_modes=None):
     return row
 
 
-FIFTHS = [(7 * i) % 12 for i in range(12)]           # C G D A E B F# ...
-
-
 def d12_perm(k, inv):
     """Left action of g=(k,inv) on chord indices (majors 0-11 = T_m,
     minors 12-23 = I_m, base chord CM = identity)."""
@@ -297,64 +292,6 @@ def e5_purity_figure(grams, out_path, k_modes=8, h=5):
     print(f"purity heatmap -> {out_path}")
 
 
-def pc_figure(rows, out_path):
-    """One panel per layer: the empirical E5 plane (best 2-dim subspace of
-    the top-6 modes aligned to the E5 isotypic pair) with the theoretical
-    circle of fifths overlaid. Filled = empirical (majors blue, minors
-    red); open circles = theory; gray line = connector; dashed ring =
-    theory points joined in circle-of-fifths order."""
-    import matplotlib.pyplot as plt
-
-    n = len(rows)
-    fig, axes = plt.subplots(1, n, figsize=(3.4 * n, 3.8))
-    if n == 1:
-        axes = [axes]
-    for L, (ax, row) in enumerate(zip(axes, rows)):
-        E, T = row["E5_emp"], row["E5_th"]
-        for i in range(cl.N):
-            ax.plot([T[i, 0], E[i, 0]], [T[i, 1], E[i, 1]],
-                    color="0.6", lw=0.8, zorder=1)
-        for fam in (0, 12):
-            ring = [fam + m for m in FIFTHS] + [fam + FIFTHS[0]]
-            ax.plot(T[ring, 0], T[ring, 1], color="0.8", lw=0.8,
-                    ls="--", zorder=1)
-        ax.scatter(T[:12, 0], T[:12, 1], facecolors="none",
-                   edgecolors="tab:blue", s=70, linewidths=1.2, zorder=2)
-        ax.scatter(T[12:, 0], T[12:, 1], facecolors="none",
-                   edgecolors="tab:red", s=70, linewidths=1.2, zorder=2)
-        ax.scatter(E[:12, 0], E[:12, 1], c="tab:blue", s=40, zorder=3,
-                   label="major")
-        ax.scatter(E[12:, 0], E[12:, 1], c="tab:red", s=40, zorder=3,
-                   label="minor")
-        for i in range(cl.N):
-            ax.annotate(SHORT_NAMES[i], (E[i, 0], E[i, 1]),
-                        fontsize=8, xytext=(2, 2),
-                        textcoords="offset points")
-        cc = row["canon_cos"]
-        mode_str = ",".join(str(m) for m in row["e5_modes"])
-        ax.set_title(f"layer {L}" + ("  (embeddings)" if L == 0 else "")
-                     + f"  [modes {mode_str}]"
-                     + f"\ncanon cos {cc[0]:.2f}/{cc[1]:.2f}, "
-                     f"chord cos {row['E5_cos_mean']:.2f} "
-                     f"(min {row['E5_cos_min']:.2f})"
-                     + f"\nmedian chord cos {row['E5_cos_median']:.2f}",
-                     fontsize=9)
-        ax.set_aspect("equal")
-        ax.tick_params(labelbottom=False, labelleft=False,
-                       bottom=False, left=False)
-        for sp in ("top", "right"):
-            ax.spines[sp].set_visible(False)
-    axes[0].legend(loc="best", fontsize=8, frameon=False)
-    fig.suptitle("ChordBERT activations: empirical E5 plane (subspace-"
-                 "aligned, top-6 modes) vs theoretical circle of fifths "
-                 "(open)", fontsize=12)
-    fig.tight_layout(rect=[0, 0, 1, 0.92])
-    fig.savefig(out_path, dpi=250, bbox_inches="tight")
-    if out_path.lower().endswith(".png"):
-        fig.savefig(out_path[:-4] + ".pdf", bbox_inches="tight")
-    print(f"figure -> {out_path}")
-
-
 def parse_mode_spec(spec):
     """Parse "0:1,4,5;3:1,2" -> {0: [1, 4, 5], 3: [1, 2]} (1-indexed)."""
     out = {}
@@ -383,7 +320,6 @@ def main():
                     help="ignore --sequences; feed each of the 24 triads "
                          "alone (one chord per input, 24 inputs total)")
     ap.add_argument("--save_npz", default="chordbert_grams.npz")
-    ap.add_argument("--fig", default="chordbert_pcs.png")
     ap.add_argument("--purity_fig", default="chordbert_e5_purity.png")
     ap.add_argument("--e5_modes", default="",
                     help='per-layer modes for the E5 plane, 1-indexed as '
@@ -392,7 +328,7 @@ def main():
                          '2-dim subspace. Unlisted layers use 1-5.')
     args = ap.parse_args()
     if args.singles:
-        for attr in ("save_npz", "fig", "purity_fig"):
+        for attr in ("save_npz", "purity_fig"):
             val = getattr(args, attr)
             root, ext = os.path.splitext(val)
             setattr(args, attr, root + "_singles" + ext)
@@ -435,7 +371,6 @@ def main():
               f"cos {row['E5_cos_mean']:.2f} med {row['E5_cos_median']:.2f} "
               f"min {row['E5_cos_min']:.2f}]  {ps}")
 
-    pc_figure(rows, args.fig)
     e5_purity_figure(grams, args.purity_fig)
 
     np.savez(args.save_npz, X=X, grams=np.array(grams), counts=counts)

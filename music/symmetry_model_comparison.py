@@ -178,13 +178,13 @@ def main():
         o2, c2 = score(cl.class_average(M1, lab), M2)
         rows.append(dict(name=name, params=npar, r2=r2,
                          full_overlap=o1, full_cosine=c1,
-                         held_overlap=o2, held_cosine=c2))
+                         held_out_overlap=o2, held_out_cosine=c2))
         print(f"{name:>17} {npar:>6} {r2:>7.4f} | {o1:>7.3f} {c1:>8.3f} | "
               f"{o2:>7.3f} {c2:>8.3f}")
     o, c = score(M1, M2)
     rows.append(dict(name="RAW", params=552, r2=None,
                      full_overlap=1.0, full_cosine=1.0,
-                     held_overlap=o, held_cosine=c))
+                     held_out_overlap=o, held_out_cosine=c))
     print(f"{'RAW':>17} {552:>6} {'—':>7} | {'1.000':>7} {'1.000':>8} | "
           f"{o:>7.3f} {c:>8.3f}")
 
