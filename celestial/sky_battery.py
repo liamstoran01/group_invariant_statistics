@@ -15,11 +15,11 @@ Per layer:
   * weighted decode R^2 of (x, y, z)
   * canonical correlations vs the sampled zonal-theory modes
 
-Outputs: printed numbers + sky_battery_{model}.pdf (+ .png preview)
-(4 panels: layer sweep, degree-colored spectrum, zonal kernel,
-degree-purity heatmap).
+Outputs: printed numbers + a standalone degree-purity heatmap
+(sky_heatmap_{model}.pdf/.png, or --heatmap-out).
 
 Usage: python3 sky_battery.py [--model mistrallarge123b] [--lmax 4]
+                              [--heatmap-out PATH]
 """
 import argparse
 import os
@@ -124,18 +124,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="mistrallarge123b")
     ap.add_argument("--lmax", type=int, default=4)
-    ap.add_argument("--out", default=None,
-                    help="output path stem or .pdf/.png (writes both formats)")
     ap.add_argument("--heatmap-out", default=None,
-                    help="also save the degree-purity heatmap alone to this "
-                         "path stem (writes .pdf and .png)")
+                    help="degree-purity heatmap path stem (writes .pdf and "
+                         ".png); default sky_heatmap_{model}")
     args = ap.parse_args()
-    out = args.out or f"sky_battery_{args.model}"
-    base, ext = os.path.splitext(out)
-    if ext.lower() in (".pdf", ".png"):
-        out_base = base
-    else:
-        out_base = out
+    hm_base = args.heatmap_out or f"sky_heatmap_{args.model}"
+    hm_base = os.path.splitext(hm_base)[0]
 
     X, lat, lon, xyz, names = sk.load_activations(args.model)
     Lyr = X.shape[0]
@@ -165,83 +159,22 @@ def main():
               " ".join(f"{m[l]:.2f}" for l in range(1, args.lmax + 1)) +
               f"   -> l={best_l} ({m[best_l]:.2f})")
 
-    # ---------------- figures ----------------
-    write_battery = args.out is not None or args.heatmap_out is None
-    if write_battery:
-        _draw_battery_figure(sweep, best, r, args, out_base)
-
-    if args.heatmap_out:
-        Pm = np.array([[m[l] for l in range(1, args.lmax + 1)]
-                       for m in r["modes"]])
-        hm_base = os.path.splitext(args.heatmap_out)[0]
-        os.makedirs(os.path.dirname(hm_base) or ".", exist_ok=True)
-        fig_h, ax = plt.subplots(figsize=(5, 6))
-        im = ax.imshow(Pm, aspect="auto", cmap="viridis", vmin=0, vmax=1)
-        ax.set_xticks(range(args.lmax))
-        ax.set_xticklabels([f"$\\ell$={l}" for l in range(1, args.lmax + 1)])
-        ax.set_yticks(range(Pm.shape[0]))
-        ax.set_yticklabels([str(k + 1) for k in range(Pm.shape[0])])
-        ax.set_ylabel("empirical mode")
-        plt.colorbar(im, ax=ax, fraction=0.046, label="degree purity")
-        ax.set_title(f"{args.model}, layer {best}")
-        fig_h.tight_layout()
-        fig_h.savefig(hm_base + ".pdf", bbox_inches="tight")
-        fig_h.savefig(hm_base + ".png", dpi=200, bbox_inches="tight")
-        print(f"saved -> {hm_base}.pdf + {hm_base}.png")
-
-
-def _draw_battery_figure(sweep, best, r, args, out_base):
-    fig = plt.figure(figsize=(16, 9))
-    ax = fig.add_subplot(2, 2, 1)
-    ls, isos, decs, c3s = zip(*sweep)
-    ax.plot(ls, decs, "o-", label="decode $R^2$")
-    ax.plot(ls, isos, "s-", label="Gram zonality $R^2$")
-    ax.plot(ls, c3s, "^-", label="canon$^2$ vs zonal theory (top3)")
-    ax.axvline(best, color="gray", lw=0.6)
-    ax.set_xlabel("layer")
-    ax.legend(fontsize=8)
-    ax.set_title(f"(a) {args.model}: sky structure across layers")
-
-    ax = fig.add_subplot(2, 2, 2)
-    colors = plt.cm.tab10(np.arange(args.lmax + 1))
-    for k, m in enumerate(r["modes"]):
-        bl = max(m, key=m.get)
-        ax.bar(k + 1, r["lam"][k], color=colors[bl],
-               alpha=0.35 + 0.65 * m[bl])
-    handles = [plt.Rectangle((0, 0), 1, 1, color=colors[l])
-               for l in range(1, args.lmax + 1)]
-    ax.legend(handles, [f"$\\ell$={l}" for l in range(1, args.lmax + 1)],
-              fontsize=8)
-    ax.set_xlabel("empirical mode")
-    ax.set_ylabel("eigenvalue")
-    ax.set_title(f"(b) layer {best}: mode spectrum colored by degree\n"
-                 "(harmonic-embedding prediction: 3/5/7 blocks)")
-
-    ax = fig.add_subplot(2, 2, 3)
-    thd = np.degrees(np.arccos(sk.XQ))
-    oq = np.argsort(thd)
-    ax.plot(thd[oq], r["c_fit"][oq], lw=2, color="tab:orange")
-    ax.set_xlabel("true angular separation on the sky (deg)")
-    ax.set_ylabel(r"$c(\theta)$")
-    ax.set_title(f"(c) zonal kernel of the activation Gram\n"
-                 f"(isotropy $R^2$ {r['r2_iso']:.2f} vs null "
-                 f"{r['null95']:.2f})")
-
-    ax = fig.add_subplot(2, 2, 4)
     Pm = np.array([[m[l] for l in range(1, args.lmax + 1)]
                    for m in r["modes"]])
+    os.makedirs(os.path.dirname(hm_base) or ".", exist_ok=True)
+    fig_h, ax = plt.subplots(figsize=(5, 6))
     im = ax.imshow(Pm, aspect="auto", cmap="viridis", vmin=0, vmax=1)
     ax.set_xticks(range(args.lmax))
     ax.set_xticklabels([f"$\\ell$={l}" for l in range(1, args.lmax + 1)])
+    ax.set_yticks(range(Pm.shape[0]))
+    ax.set_yticklabels([str(k + 1) for k in range(Pm.shape[0])])
     ax.set_ylabel("empirical mode")
-    plt.colorbar(im, ax=ax, fraction=0.046)
-    ax.set_title("(d) degree purity of the modes")
-    fig.tight_layout()
-    pdf_path = out_base + ".pdf"
-    png_path = out_base + ".png"
-    fig.savefig(pdf_path, bbox_inches="tight")
-    fig.savefig(png_path, dpi=200, bbox_inches="tight")
-    print(f"saved -> {pdf_path} + {png_path}")
+    plt.colorbar(im, ax=ax, fraction=0.046, label="degree purity")
+    ax.set_title(f"{args.model}, layer {best}")
+    fig_h.tight_layout()
+    fig_h.savefig(hm_base + ".pdf", bbox_inches="tight")
+    fig_h.savefig(hm_base + ".png", dpi=200, bbox_inches="tight")
+    print(f"saved -> {hm_base}.pdf + {hm_base}.png")
 
 
 if __name__ == "__main__":

@@ -5,15 +5,14 @@ Split / recombine panels from sky_battery_compact.py and
 sky_overlay_harmonics.py, with identical numerics and styling.
 
 Default: four-panel combo --- (a) zonal kernel, (b) degree purity
-(heatmap; optional --with-lambda adds empirical-mode vs λ bars),
-(c) Mistral Large 2 + Books overlays.
+heatmap, (c) Mistral Large 2 + Books overlays.
 
 Optional (--sweep): also write battery panel (a) as its own figure.
 
 Usage:
   python celestial_main_figure.py [--model mistrallarge123b] [--lmax 4]
       [--no-dipole-overlap] [--layer 72] [--no-pin] [--nperm 300]
-      [--with-lambda] [--sweep] [--out-sweep sky_layer_sweep.pdf]
+      [--sweep] [--out-sweep sky_layer_sweep.pdf]
       [--out-combo sky_kernel_overlay.pdf]
 """
 import argparse
@@ -223,8 +222,6 @@ def main():
     ap.add_argument("--layer", type=int, default=72)
     ap.add_argument("--no-pin", action="store_true")
     ap.add_argument("--nperm", type=int, default=300)
-    ap.add_argument("--with-lambda", action="store_true",
-                    help="include empirical-mode vs λ bars in panel (b)")
     ap.add_argument("--sweep", action="store_true",
                     help="also write battery panel (a) as its own figure")
     ap.add_argument("--out-sweep", default="sky_layer_sweep.pdf")
@@ -269,11 +266,10 @@ def main():
     lon_all = np.concatenate([ov["lonb"], ov["lonL"]])
     norm = Normalize(vmin=float(lon_all.min()), vmax=float(lon_all.max()))
 
-    # Figure 2: (a) kernel | gap | (b) purity [| λ] | (c) LLM | Books | RA
+    # Figure 2: (a) kernel | gap | (b) purity | (c) LLM | Books | RA
     fig2 = plt.figure(figsize=(20, 5.5))
-    w_b = 1.5 if args.with_lambda else 1.05
     gs = fig2.add_gridspec(
-        1, 4, width_ratios=[0.9, 0.12, w_b, 2.85], wspace=0.08)
+        1, 4, width_ratios=[0.9, 0.12, 1.05, 2.85], wspace=0.08)
     # Overlay pair tight; RA colorbar kept slim like the purity colorbar.
     gs_right = gs[0, 3].subgridspec(
         1, 2, width_ratios=[1.0, 0.035], wspace=0.05)
@@ -302,32 +298,11 @@ def main():
                 loc="lower left", fontsize=17, frameon=True,
                 framealpha=0.45, handlelength=1.4)
 
-    # (b) degree-purity heatmap (+ optional λ bars)
+    # (b) degree-purity heatmap
     nshow = len(r["modes"])
-    colors = plt.cm.tab10(np.arange(args.lmax + 1))
     Pm = np.array([[m[l] for l in range(1, args.lmax + 1)]
                    for m in r["modes"]])
-
-    axl = None
-    if args.with_lambda:
-        gs_c = gs[0, 2].subgridspec(1, 2, width_ratios=[0.30, 1.05],
-                                    wspace=0.08)
-        axl = fig2.add_subplot(gs_c[0, 0])
-        lam = r["lam"][:nshow]
-        win = [max(m, key=m.get) for m in r["modes"]]
-        axl.barh(np.arange(nshow), lam,
-                 color=[colors[w] for w in win],
-                 alpha=0.9, height=0.75)
-        axl.invert_yaxis()
-        axl.set_ylim(nshow - 0.5, -0.5)
-        axl.set_xlabel(r"$\lambda$", fontsize=23, labelpad=4)
-        axl.set_yticks(range(0, nshow, 2))
-        axl.set_yticklabels([str(k + 1) for k in range(0, nshow, 2)],
-                            fontsize=16)
-        axl.set_ylabel("empirical mode")
-        axh = fig2.add_subplot(gs_c[0, 1], sharey=axl)
-    else:
-        axh = fig2.add_subplot(gs[0, 2])
+    axh = fig2.add_subplot(gs[0, 2])
 
     im = axh.imshow(Pm, aspect="auto", cmap="viridis", vmin=0, vmax=1,
                     interpolation="nearest",
@@ -335,13 +310,10 @@ def main():
     axh.set_xticks(range(1, args.lmax + 1))
     axh.set_xticklabels([f"$\\ell$={l}" for l in range(1, args.lmax + 1)],
                         fontsize=21)
-    if args.with_lambda:
-        plt.setp(axh.get_yticklabels(), visible=False)
-    else:
-        axh.set_ylabel("empirical mode")
-        axh.set_yticks(range(0, nshow, 2))
-        axh.set_yticklabels([str(k + 1) for k in range(0, nshow, 2)],
-                            fontsize=16)
+    axh.set_ylabel("empirical mode")
+    axh.set_yticks(range(0, nshow, 2))
+    axh.set_yticklabels([str(k + 1) for k in range(0, nshow, 2)],
+                        fontsize=16)
     cbar_c = plt.colorbar(im, ax=axh, fraction=0.05, pad=0.02)
     cbar_c.set_label("degree purity", fontsize=19)
     cbar_c.ax.tick_params(labelsize=18)
@@ -422,19 +394,13 @@ def main():
     b_shift = 0.04
     b_right = 0.018  # was 0.03; smidge left from prior placement
     axes_b = [axh, cbar_c.ax]
-    if axl is not None:
-        axes_b.append(axl)
     for ax in axes_b:
         pos = ax.get_position()
         ax.set_position([pos.x0 + b_right, pos.y0 - b_shift,
                          pos.width, pos.height])
 
     bb_heat = axh.get_position()
-    if axl is not None:
-        bb_spec = axl.get_position()
-        x_mid_b = 0.5 * (bb_spec.x0 + bb_heat.x1)
-    else:
-        x_mid_b = 0.5 * (bb_heat.x0 + bb_heat.x1)
+    x_mid_b = 0.5 * (bb_heat.x0 + bb_heat.x1)
     fig2.text(x_mid_b, title_y,
               "(b) Spherical Harmonics Follow",
               ha="center", va="center", fontsize=title_fs,
