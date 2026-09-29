@@ -3,22 +3,20 @@
 
 ## Get the chords
 
-`extract_chords.py` pulls Bach chorales from music21's bundled corpus
-(offline; no extra download). Each score is chordified; recognized
-sonorities become integer tokens (`chordlib` layout). Downstream scripts
-default to the **full** vocabulary JSON.
+We must first assemble our corpus. Before running any other script `extract_chords.py` pulls the Bach chorales from music21. 
+Each score is chordified.  Downstream scripts
+default to the **full** vocabulary, namely
 
 ```bash
 python3 extract_chords.py --vocab full
 ```
 
-That writes `chord_sequences_full.json` (gitignored). Optional flags:
-`--n 400` (max chorales, default) and `--out PATH`. `--vocab triads`
-keeps only the 24 major/minor triads and writes `chord_sequences.json`.
+This writes `chord_sequences_full.json`, where the corpus considers all chords, not just the triads. Using `--vocab triads` instead
+forms `chord_sequences.json` which only contains the 24 triads.
 
 ## Bach analyses
 
-These read `chord_sequences_full.json` (override with `--sequences`):
+These all read `chord_sequences_full.json` by default (override with `--sequences`):
 
 ```bash
 python3 heatmap_theory.py
@@ -60,3 +58,4 @@ Same layout as `heatmap_theory.py`, with a ChordBERT E5 panel (default
 layer 3). Writes `heatmap_chordbert.pdf`/`.png` and
 `fig_chordbert_l3_irreps.pdf`/`.png`. Reuses
 `label_positions_heatmap_chordbert.json` unless you pass `--place`.
+This is the main music figure in the paper.
