@@ -1,7 +1,7 @@
 """
 heatmap_chordbert.py
 --------------------
-Same one-row layout as heatmap_theory.py (raw M* | Reynolds M_sym |
+Same one-row layout as heatmap_theory.py (raw M* | averaged M_sym |
 first Bach theory plane), but the fourth panel is ChordBERT layer 3's
 empirical E5 plane vs the theoretical circle of fifths — same major/minor
 colors and marker/label sizes as the theory panels in heatmap_theory.
@@ -112,7 +112,7 @@ def report_bach_per_plane_procrustes(M, k_planes=3):
 
 
 def reynolds_residual(M):
-    """||M - Reynolds(M)||_F / ||M||_F."""
+    """||M - group_average(M)||_F / ||M||_F."""
     return float(np.linalg.norm(M - cl.reynolds(M)) /
                  max(np.linalg.norm(M), 1e-12))
 
@@ -193,7 +193,7 @@ def run_chord_permutation_nulls(M, M_cb, e5_modes, n_rounds=500, seed=0):
     # Panel order matches the figure left→right.
     panel_names = [
         ("(a) raw M*", "M* D12 R^2"),
-        ("(a) Reynolds M_sym", "M_sym residual"),
+        ("(a) averaged M_sym", "M_sym residual"),
         ("(b) Bach", "Bach mean cos"),
         ("(b) ChordBERT", "ChordBERT mean cos"),
     ]
@@ -494,7 +494,7 @@ def main():
     cb_mean, cb_med, cb_min = chord_cosines(cb["E5_emp"], cb["E5_th"])
     print(f"ChordBERT L{args.layer} chord cos: mean {cb_mean:.3f}, "
           f"median {cb_med:.3f}, min {cb_min:.3f}")
-    print(f"Reynolds residual ||M-M_sym||/||M||: {reynolds_residual(M):.3f}")
+    print(f"group-average residual ||M-M_sym||/||M||: {reynolds_residual(M):.3f}")
 
     if args.null_rounds > 0:
         run_chord_permutation_nulls(

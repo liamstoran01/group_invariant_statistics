@@ -15,7 +15,7 @@ Contents
   * Corpus statistics: windowed co-occurrence counts and the paper's
     normalized matrix M* = (P - pp)/((P + pp)/2), over an arbitrary chord
     vocabulary, with helpers to slice out the 24-triad block.
-  * Reynolds (group) averaging, centering, and variance-explained R^2.
+  * Group averaging, centering, and variance-explained R^2.
 
 Token conventions (shared by all extractions):
     r        major triad, root r (0..11)      12 + r   minor triad
@@ -375,7 +375,7 @@ def latent_z12_labels(offset=9):
 
 def class_average(M24, labels):
     """Average M over the labeling's classes: the closest labels-invariant
-    matrix (class_average with d12_labels == reynolds)."""
+    matrix (class_average with d12_labels is the D12 group average)."""
     A = np.zeros_like(M24)
     for c in np.unique(labels):
         mask = labels == c

@@ -11,7 +11,7 @@ Pipeline, per layer L:
   2. Doubly center the Gram: M_L = P X_L X_L^T P (RMS-normalized diagonal),
      the same M* proxy as the sky section.
   3. Structural invariance: D12 homogeneity R^2 of M_L (cl.r2 against
-     cl.d12_labels), Reynolds residual ||M - M_sym|| / ||M||.
+     cl.d12_labels), group-average residual ||M - M_sym|| / ||M||.
   4. Modes: top-3 empirical planes vs theory modes of the symmetrized
      kernel; isotypic energies (subspace overlap), per-chord cosines
      after Procrustes; angular step/semitone of the leading plane
