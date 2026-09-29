@@ -39,7 +39,7 @@ Do not run it directly.
 ## ChordBERT
 
 First cache layer-wise Grams (Hugging Face
-`StravynDynamics/ChordBert`; needs the Bach JSON)
+`StravynDynamics/ChordBert`; need to run `extract_chords.py` first)
 by running:
 
 ```bash
