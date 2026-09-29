@@ -2,8 +2,7 @@
 
 ## Get text8
 
-From this directory, download Matt Mahoney's text8 corpus (first 10^8 bytes
-of cleaned English Wikipedia), unzip it, and rename the extracted file to
+From this directory, download the text8 corpus (Wikipedia dump), unzip it, and rename the extracted file to
 `text8.txt` (that is the default `--corpus` path):
 
 ```bash
@@ -16,7 +15,6 @@ unzip text8.zip && mv text8 text8.txt
 Activate the repo environment, then run `months.py` from this directory:
 
 ```bash
-source ../.venv/bin/activate
 python3 months.py
 ```
 
@@ -24,9 +22,7 @@ Optional flags: `--corpus text8.txt` (default) and `--out months.pdf`.
 
 ## Output
 
-The script prints corpus diagnostics (month-sense `"may"` counts, `M*`
-range, circular kernel `C(d)` with bootstrap CIs, Fourier eigenvalues,
-class-averaging R^2, per-month theory cosines, angular steps).
+The script prints corpus diagnostics.
 
 It also writes a four-panel figure:
 
