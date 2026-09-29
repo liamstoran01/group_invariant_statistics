@@ -29,17 +29,19 @@ def is_month_sense(toks, p):
             or nxt1 in MONTHS or prv1 in MONTHS)
 
 
-def build_blocks(path):
+def build_blocks(path, filter_may=True):
     """Per-corpus-block pair-weight and count accumulators (for the
     block bootstrap) plus the full-corpus totals."""
     toks = open(path).read().split()
     N = len(toks)
     idx = {m: i for i, m in enumerate(MONTHS)}
     pos = [(p, idx[t]) for p, t in enumerate(toks)
-           if t in idx and (t != "may" or is_month_sense(toks, p))]
-    kept_may = sum(1 for _, i in pos if i == 4)
-    print(f"'may' kept as month-sense: {kept_may} "
-          f"(of {sum(1 for t in toks if t == 'may')})")
+           if t in idx and (not filter_may or t != "may"
+                            or is_month_sense(toks, p))]
+    if filter_may:
+        kept_may = sum(1 for _, i in pos if i == 4)
+        print(f"'may' kept as month-sense: {kept_may} "
+              f"(of {sum(1 for t in toks if t == 'may')})")
     bsz = N // NBLOCKS + 1
     Wb = np.zeros((NBLOCKS, 12, 12))
     cb = np.zeros((NBLOCKS, 12))
@@ -72,6 +74,30 @@ def mstar_from(W, cnt, N):
 
 def class_kernel(M, dist):
     return np.array([M[dist == d].mean() for d in range(7)])
+
+
+def month_cosines(M, dist, blocks):
+    """Per-month cosine vs class-average theory in the k=1 and k=2 planes."""
+    c = class_kernel(M, dist)
+    C = c[dist]
+    lam_k = {k: float(blocks[k][:, 0] @ C @ blocks[k][:, 0]) for k in blocks}
+    Pc = np.eye(12) - np.ones((12, 12)) / 12.0
+    Mc = Pc @ M @ Pc
+    lam_e, U_e = np.linalg.eigh(Mc)
+    oe = np.argsort(-np.abs(lam_e))
+    lam_e, U_e = lam_e[oe], U_e[:, oe]
+    E = U_e * np.sqrt(np.abs(lam_e))
+    theory4 = np.column_stack([blocks[1] * np.sqrt(max(lam_k[1], 0)),
+                               blocks[2] * np.sqrt(max(lam_k[2], 0))])
+    emp4 = E[:, 0:4]
+    A = np.zeros((12, 4))
+    for sl in [slice(0, 2), slice(2, 4)]:
+        Tb, Eb = theory4[:, sl], emp4[:, sl]
+        U2, _, V2 = np.linalg.svd(Tb.T @ Eb)
+        A[:, sl] = Tb @ (U2 @ V2)
+    return [emp4[i] @ A[i] / max(np.linalg.norm(emp4[i]) *
+                                 np.linalg.norm(A[i]), 1e-12)
+            for i in range(12)]
 
 
 def fourier_basis():
@@ -192,7 +218,12 @@ def main():
                              max(np.linalg.norm(emp4[i]) *
                                  np.linalg.norm(An[i]), 1e-12)
                              for i in range(12)]))
-    print(f"\nper-month cos: {np.mean(cos):.2f}/{np.median(cos):.2f} "
+    Wb0, cb0, nb0 = build_blocks(args.corpus, filter_may=False)
+    cos0 = month_cosines(mstar_from(Wb0.sum(0), cb0.sum(0), nb0.sum()),
+                         dist, blocks)
+    print(f"\nper-month cos before may-sense: "
+          f"{np.mean(cos0):.2f}/{np.median(cos0):.2f}")
+    print(f"per-month cos after may-sense:  {np.mean(cos):.2f}/{np.median(cos):.2f} "
           f"(label-shuffle null {np.mean(null):.2f}, "
           f"95% {np.quantile(null, 0.95):.2f})")
     worst = np.argsort(cos)[:2]
