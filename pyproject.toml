@@ -14,6 +14,7 @@ dependencies = [
     "music21",
     "tqdm",
     "adjusttext",
+    "gensim>=4.4.0",
 ]
 
 # Same CUDA 12.1 wheels as LLM_manifolds/.venv (TITAN RTX).
