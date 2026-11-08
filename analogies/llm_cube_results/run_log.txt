@@ -1,0 +1,152 @@
+
+===== mock =====
+$ /home/lstoran/projects/man_geom/LLM_manifolds/word_embed/clean_code_paper/group_invariant_statistics/.venv/bin/python llm_cube_mode.py --mock --out llm_cube_results/mock
+Z_2^3 invariance of the LLM Gram: R^2 = 1.000
+matched characters: ['g', 'n', 'r', 'gnr', 'gr', 'gn', 'nr']
+overlaps: [1.0, 1.0, 0.999, 0.996, 0.953, 0.948, 0.993]
+flip test d1[k]*d2[k]: {'g': 3.71, 'n': -0.0, 'r': 0.0, 'gnr': -0.18, 'gr': 0.02, 'gn': -0.01, 'nr': -0.0}
+saved -> llm_cube_results/mock.pdf/.png
+
+[exit 0]
+
+===== gpt2_unembed =====
+$ /home/lstoran/projects/man_geom/LLM_manifolds/word_embed/clean_code_paper/group_invariant_statistics/.venv/bin/python llm_cube_mode.py --model gpt2 --source unembed --out llm_cube_results/gpt2_unembed
+[HAMI-core Msg(602615:140505981983808:libvgpu.c:870)]: Initializing.....
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 148/148 [00:00<00:00, 2105.33it/s]
+Z_2^3 invariance of the LLM Gram: R^2 = 0.975
+matched characters: ['r', 'g', 'n', 'gr', 'nr', 'gn', 'gnr']
+overlaps: [0.987, 0.921, 0.972, 0.88, 0.947, 0.789, 0.804]
+flip test d1[k]*d2[k]: {'r': 0.14, 'g': 2.37, 'n': 0.09, 'gr': 0.19, 'nr': 0.01, 'gn': -0.48, 'gnr': -0.01}
+saved -> llm_cube_results/gpt2_unembed.pdf/.png
+[HAMI-core Msg(602615:140505981983808:multiprocess_memory_limit.c:703)]: Cleanup on exit for PID 602615
+[HAMI-core Msg(602615:140505981983808:multiprocess_memory_limit.c:739)]: Exit cleanup complete for PID 602615
+
+[exit 0]
+
+===== gpt2_embed =====
+$ /home/lstoran/projects/man_geom/LLM_manifolds/word_embed/clean_code_paper/group_invariant_statistics/.venv/bin/python llm_cube_mode.py --model gpt2 --source embed --out llm_cube_results/gpt2_embed
+[HAMI-core Msg(602762:140672545549376:libvgpu.c:870)]: Initializing.....
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 148/148 [00:00<00:00, 11007.50it/s]
+Z_2^3 invariance of the LLM Gram: R^2 = 0.975
+matched characters: ['r', 'g', 'n', 'gr', 'nr', 'gn', 'gnr']
+overlaps: [0.987, 0.921, 0.972, 0.88, 0.947, 0.789, 0.804]
+flip test d1[k]*d2[k]: {'r': 0.14, 'g': 2.37, 'n': 0.09, 'gr': 0.19, 'nr': 0.01, 'gn': -0.48, 'gnr': -0.01}
+saved -> llm_cube_results/gpt2_embed.pdf/.png
+[HAMI-core Msg(602762:140672545549376:multiprocess_memory_limit.c:703)]: Cleanup on exit for PID 602762
+[HAMI-core Msg(602762:140672545549376:multiprocess_memory_limit.c:739)]: Exit cleanup complete for PID 602762
+
+[exit 0]
+
+===== gpt2_unembed_whiten =====
+$ /home/lstoran/projects/man_geom/LLM_manifolds/word_embed/clean_code_paper/group_invariant_statistics/.venv/bin/python llm_cube_mode.py --model gpt2 --source unembed --whiten --out llm_cube_results/gpt2_unembed_whiten
+[HAMI-core Msg(602903:140180605418560:libvgpu.c:870)]: Initializing.....
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 148/148 [00:00<00:00, 7232.57it/s]
+Z_2^3 invariance of the LLM Gram: R^2 = 0.651
+matched characters: ['r', 'n', 'g', 'n', 'nr', 'gr', 'gnr']
+overlaps: [0.784, 0.605, 0.629, 0.634, 0.93, 0.628, 0.733]
+flip test d1[k]*d2[k]: {'r': 0.58, 'n': -0.1, 'g': 0.43, 'nr': -0.01, 'gr': -0.06, 'gnr': 0.0}
+saved -> llm_cube_results/gpt2_unembed_whiten.pdf/.png
+[HAMI-core Msg(602903:140180605418560:multiprocess_memory_limit.c:703)]: Cleanup on exit for PID 602903
+[HAMI-core Msg(602903:140180605418560:multiprocess_memory_limit.c:739)]: Exit cleanup complete for PID 602903
+
+[exit 0]
+
+===== gpt2_layer6 =====
+$ /home/lstoran/projects/man_geom/LLM_manifolds/word_embed/clean_code_paper/group_invariant_statistics/.venv/bin/python llm_cube_mode.py --model gpt2 --source layer --layer 6 --out llm_cube_results/gpt2_layer6
+[HAMI-core Msg(603056:139757049654336:libvgpu.c:870)]: Initializing.....
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] The following generation flags are not valid and may be ignored: ['output_hidden_states']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 148/148 [00:00<00:00, 9025.78it/s]
+[HAMI-core Msg(603056:139757049654336:libvgpu.c:909)]: Initialized
+Z_2^3 invariance of the LLM Gram: R^2 = 0.978
+matched characters: ['r', 'g', 'n', 'gr', 'nr', 'gn', 'gnr']
+overlaps: [0.992, 0.912, 0.929, 0.862, 0.909, 0.792, 0.79]
+flip test d1[k]*d2[k]: {'r': 0.05, 'g': 1.69, 'n': 0.21, 'gr': 0.23, 'nr': 0.01, 'gn': -0.22, 'gnr': -0.0}
+saved -> llm_cube_results/gpt2_layer6.pdf/.png
+[HAMI-core Msg(603056:139757049654336:multiprocess_memory_limit.c:703)]: Cleanup on exit for PID 603056
+[HAMI-core Msg(603056:139757049654336:multiprocess_memory_limit.c:739)]: Exit cleanup complete for PID 603056
+
+[exit 0]
+
+===== gpt2_layer12 =====
+$ /home/lstoran/projects/man_geom/LLM_manifolds/word_embed/clean_code_paper/group_invariant_statistics/.venv/bin/python llm_cube_mode.py --model gpt2 --source layer --layer 12 --out llm_cube_results/gpt2_layer12
+[HAMI-core Msg(603226:139780375411776:libvgpu.c:870)]: Initializing.....
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] The following generation flags are not valid and may be ignored: ['output_hidden_states']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 148/148 [00:00<00:00, 9093.48it/s]
+[HAMI-core Msg(603226:139780375411776:libvgpu.c:909)]: Initialized
+Z_2^3 invariance of the LLM Gram: R^2 = 0.654
+matched characters: ['r', 'gr', 'n', 'g', 'nr', 'gn', 'gnr']
+overlaps: [0.876, 0.662, 0.867, 0.746, 0.758, 0.76, 0.801]
+flip test d1[k]*d2[k]: {'r': 0.05, 'gr': -0.17, 'n': -0.0, 'g': 0.11, 'nr': 0.03, 'gn': -0.03, 'gnr': 0.0}
+saved -> llm_cube_results/gpt2_layer12.pdf/.png
+[HAMI-core Msg(603226:139780375411776:multiprocess_memory_limit.c:703)]: Cleanup on exit for PID 603226
+[HAMI-core Msg(603226:139780375411776:multiprocess_memory_limit.c:739)]: Exit cleanup complete for PID 603226
+
+[exit 0]
+
+===== qwen25_1p5B_unembed =====
+$ /home/lstoran/projects/man_geom/LLM_manifolds/word_embed/clean_code_paper/group_invariant_statistics/.venv/bin/python llm_cube_mode.py --model Qwen/Qwen2.5-1.5B --source unembed --out llm_cube_results/qwen25_1p5B_unembed
+[HAMI-core Msg(603391:139706551798848:libvgpu.c:870)]: Initializing.....
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+Loading weights:   0%|          | 1/338 [00:01<05:46,  1.03s/it]
+Loading weights:  23%|██▎       | 77/338 [00:01<00:02, 93.44it/s]
+Loading weights:  36%|███▌      | 121/338 [00:01<00:02, 107.24it/s]
+Loading weights:  45%|████▍     | 151/338 [00:01<00:01, 108.07it/s]
+Loading weights:  51%|█████▏    | 174/338 [00:01<00:01, 110.14it/s]
+Loading weights:  57%|█████▋    | 193/338 [00:02<00:01, 120.94it/s]
+Loading weights:  63%|██████▎   | 212/338 [00:02<00:01, 110.37it/s]
+Loading weights:  68%|██████▊   | 231/338 [00:02<00:00, 109.51it/s]
+Loading weights:  72%|███████▏  | 245/338 [00:02<00:00, 114.32it/s]
+Loading weights:  78%|███████▊  | 264/338 [00:02<00:00, 124.41it/s]
+Loading weights:  83%|████████▎ | 279/338 [00:02<00:00, 115.21it/s]
+Loading weights:  86%|████████▋ | 292/338 [00:02<00:00, 118.16it/s]
+Loading weights:  90%|█████████ | 305/338 [00:03<00:00, 118.96it/s]
+Loading weights:  95%|█████████▍| 321/338 [00:03<00:00, 129.11it/s]
+Loading weights: 100%|██████████| 338/338 [00:03<00:00, 104.82it/s]
+Z_2^3 invariance of the LLM Gram: R^2 = 0.966
+matched characters: ['r', 'g', 'n', 'gr', 'nr', 'gn', 'gnr']
+overlaps: [0.991, 0.936, 0.706, 0.908, 0.827, 0.878, 0.85]
+flip test d1[k]*d2[k]: {'r': 0.0, 'g': 1.4, 'n': 0.49, 'gr': 0.5, 'nr': 0.03, 'gn': -0.38, 'gnr': -0.02}
+saved -> llm_cube_results/qwen25_1p5B_unembed.pdf/.png
+[HAMI-core Msg(603391:139706551798848:multiprocess_memory_limit.c:703)]: Cleanup on exit for PID 603391
+[HAMI-core Msg(603391:139706551798848:multiprocess_memory_limit.c:739)]: Exit cleanup complete for PID 603391
+
+[exit 0]
+
+===== qwen25_1p5B_layer14 =====
+$ /home/lstoran/projects/man_geom/LLM_manifolds/word_embed/clean_code_paper/group_invariant_statistics/.venv/bin/python llm_cube_mode.py --model Qwen/Qwen2.5-1.5B --source layer --layer 14 --out llm_cube_results/qwen25_1p5B_layer14
+[HAMI-core Msg(603606:140125909707840:libvgpu.c:870)]: Initializing.....
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] The following generation flags are not valid and may be ignored: ['output_hidden_states']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]
+Loading weights:  19%|█▉        | 64/338 [00:00<00:00, 608.36it/s]
+Loading weights:  46%|████▌     | 155/338 [00:00<00:00, 781.68it/s]
+Loading weights:  72%|███████▏  | 244/338 [00:00<00:00, 795.53it/s]
+Loading weights: 100%|██████████| 338/338 [00:00<00:00, 828.73it/s]
+[HAMI-core Msg(603606:140125909707840:libvgpu.c:909)]: Initialized
+Z_2^3 invariance of the LLM Gram: R^2 = 0.995
+matched characters: ['r', 'g', 'n', 'gr', 'nr', 'gn', 'gnr']
+overlaps: [0.999, 0.975, 0.975, 0.978, 0.991, 0.754, 0.745]
+flip test d1[k]*d2[k]: {'r': 0.0, 'g': 1.73, 'n': 0.02, 'gr': 0.47, 'nr': -0.0, 'gn': -0.23, 'gnr': -0.0}
+saved -> llm_cube_results/qwen25_1p5B_layer14.pdf/.png
+[HAMI-core Msg(603606:140125909707840:multiprocess_memory_limit.c:703)]: Cleanup on exit for PID 603606
+[HAMI-core Msg(603606:140125909707840:multiprocess_memory_limit.c:739)]: Exit cleanup complete for PID 603606
+
+[exit 0]
