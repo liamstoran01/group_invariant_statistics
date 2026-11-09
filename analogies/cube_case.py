@@ -3,17 +3,13 @@ cube3_modes_vs_theory.py
 ------------------------
 Mine a corpus for the complete Z_2^3 cube
   man/woman/men/women/king/queen/kings/queens
-(attributes: gender g, number n, royalty r) and produce the four-panel
+(attributes: gender g, number n, royalty r) and produce the three-panel
 figure:
 
-  (1) doubly centered PMI M* over the 8 words;
-  (2) its Reynolds projection = the nearest exactly Z_2^3-invariant
-      matrix (average over the 8 diagonal attribute flips);
-  (3) the empirical eigenvectors of M* (|eigenvalue| order, each
-      sign-aligned to its best-matching character, overlap printed);
-  (4) the theory panel: the seven nontrivial Walsh characters
-      chi_S(alpha) = prod_{k in S} alpha_k / sqrt(8) -- pure sign
-      patterns fixed by the group before any data is seen.
+  (a) Statistical Invariance Holds: PM*P and its Reynolds projection
+      Pi_{Z_2^3};
+  (b) Boolean irreps follow: empirical eigenvectors of M* (filled
+      squares) overlaid with matched Walsh characters chi_S (frames).
 
 Corpus input as in mine_cube_trichotomy.py: --demo (text8),
 --wiki dump.xml.bz2, or --text files. Requires mine_cube_trichotomy.py
@@ -29,6 +25,10 @@ import types
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Normalize
+from matplotlib.lines import Line2D
+from matplotlib.patches import Rectangle
 import numpy as np
 
 import mine_cube_trichotomy as mc
@@ -99,14 +99,14 @@ def main():
     print("overlaps:", [round(float(v), 3) for v in ovls])
 
     # ---------------- figure ----------------
-    fig, ax = plt.subplots(1, 4, figsize=(17.5, 4.8),
-                           gridspec_kw={"width_ratios": [1, 1, .95, .95]})
+    cmap = plt.cm.RdBu_r
+    fig, ax = plt.subplots(1, 3, figsize=(14.6, 5.2))
+    for a in ax:
+        a.set_box_aspect(1)
     vmax = np.max(np.abs(Mc))
-    panels = [(Mc, ax[0], "doubly centered PMI $M^*$ (mined)"),
-              (R, ax[1], "nearest exactly $\\mathbb{Z}_2^3$-invariant\n"
-               f"(Reynolds projection, $R^2$={r2:.2f})")]
-    for A, a, title in panels:
-        im = a.imshow(A, cmap="RdBu_r", vmin=-vmax, vmax=vmax)
+    for A, a, sub in [(Mc, ax[0], r"$PM^{\star}P$"),
+                      (R, ax[1], r"$\Pi_{\mathbb{Z}_2^3}$")]:
+        im = a.imshow(A, cmap=cmap, vmin=-vmax, vmax=vmax, aspect="auto")
         a.set_xticks(range(N))
         a.set_yticks(range(N))
         a.set_xticklabels(targets, rotation=45, ha="right", fontsize=8)
@@ -116,25 +116,53 @@ def main():
         for p in (1.5, 5.5):
             a.axhline(p, color="k", lw=0.5, ls=":")
             a.axvline(p, color="k", lw=0.5, ls=":")
-        a.set_title(title, fontsize=10)
-    fig.colorbar(im, ax=ax[1], shrink=0.75, pad=0.02)
-    vm = np.max(np.abs(E))
-    for A, a, title in [(E, ax[2], "empirical eigenvectors of $M^*$\n"
-                         "($|\\lambda|$ order, sign-aligned)"),
-                        (Th, ax[3], "theory: Walsh characters "
-                         "$\\chi_S$\n(matched modes)")]:
-        a.imshow(A, cmap="RdBu_r", vmin=-vm, vmax=vm, aspect="auto")
-        a.set_yticks(range(N))
-        a.set_yticklabels(targets, fontsize=8)
-        a.set_xticks(range(7))
-        if A is E:
-            a.set_xticklabels([f"{nm}\n{ov:.2f}" for nm, ov
-                               in zip(names, ovls)], fontsize=7.5)
-            a.set_xlabel("matched character / overlap", fontsize=8)
-        else:
-            a.set_xticklabels(names, fontsize=9)
-        a.set_title(title, fontsize=10)
-    fig.tight_layout()
+        a.set_title(sub, fontsize=12, pad=6)
+    a = ax[2]
+    vm = max(float(np.max(np.abs(E))), float(np.max(np.abs(Th))), 1e-12)
+    norm = Normalize(vmin=-vm, vmax=vm)
+    gap, frame = 0.06, 0.18
+    for i in range(N):
+        for j in range(7):
+            a.add_patch(Rectangle(
+                (j - 0.5 + gap, i - 0.5 + gap), 1 - 2 * gap, 1 - 2 * gap,
+                facecolor=cmap(norm(Th[i, j])), edgecolor="none",
+                zorder=1))
+            a.add_patch(Rectangle(
+                (j - 0.5 + frame, i - 0.5 + frame),
+                1 - 2 * frame, 1 - 2 * frame,
+                facecolor=cmap(norm(E[i, j])), edgecolor="none",
+                zorder=2))
+    a.set_xlim(-0.5, 6.5)
+    a.set_ylim(N - 0.5, -0.5)
+    a.set_aspect("auto")
+    a.set_yticks(range(N))
+    a.set_yticklabels(targets, fontsize=8)
+    a.set_xticks(range(7))
+    a.set_xticklabels([f"{nm}\n{ov:.2f}" for nm, ov
+                       in zip(names, ovls)], fontsize=7.5)
+    a.set_xlabel("matched character / overlap", fontsize=8)
+    a.legend([Line2D([0], [0], marker="s", color="none",
+                     markerfacecolor="0.35", markeredgecolor="none", ms=9),
+              Line2D([0], [0], marker="s", color="none",
+                     markerfacecolor="none", markeredgecolor="0.35",
+                     markeredgewidth=2.2, ms=11)],
+             ["empirical", "theory"], fontsize=8, loc="upper center",
+             bbox_to_anchor=(0.5, -0.28), ncol=2, frameon=False)
+    fig.subplots_adjust(left=0.05, right=0.92, top=0.78, bottom=0.22,
+                        wspace=0.42)
+    p0, p1, p2 = (a.get_position() for a in ax)
+    fig.text(0.5 * (p0.x0 + p1.x1), p0.y1 + 0.07,
+             "(a) Statistical Invariance Holds",
+             ha="center", va="bottom", fontsize=16, transform=fig.transFigure)
+    fig.text(0.5 * (p2.x0 + p2.x1), p2.y1 + 0.07,
+             "(b) Boolean irreps follow",
+             ha="center", va="bottom", fontsize=16, transform=fig.transFigure)
+    cax1 = fig.add_axes([p1.x1 + 0.008, p1.y0, 0.014, p1.height])
+    fig.colorbar(im, cax=cax1)
+    cax2 = fig.add_axes([p2.x1 + 0.008, p2.y0, 0.014, p2.height])
+    sm = ScalarMappable(norm=norm, cmap=cmap)
+    sm.set_array([])
+    fig.colorbar(sm, cax=cax2)
     fig.savefig(f"{args.out}.pdf", bbox_inches="tight")
     fig.savefig(f"{args.out}.png", dpi=170, bbox_inches="tight")
     print(f"saved -> {args.out}.pdf/.png")
