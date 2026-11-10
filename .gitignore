@@ -31,6 +31,7 @@ model_sky_heatmaps/
 
 # Word2Vec / GloVe training caches
 analogies/cube_wordvecs_cache/
+analogies/cube_mstar_cache/
 
 # Generated JSON (keep the ChordBERT/Bach label sidecar and constellation aliases)
 *.json

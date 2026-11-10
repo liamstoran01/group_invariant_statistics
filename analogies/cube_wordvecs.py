@@ -42,6 +42,7 @@ from tqdm import tqdm
 
 from cube3_corpus_llm import (
     _DEFAULT_TEXT8, draw_overlay, gram_from_vectors, match_walsh, reynolds,
+    subset_label,
 )
 from cube_case import WORDS
 
@@ -632,46 +633,48 @@ def main():
 
     Ew, Thw, nw, ow = overlay_pack("Word2Vec", Xw8, pts)
     Eg, Thg, ng, og = overlay_pack("GloVe", Xg8, pts)
+    nw_s = [subset_label(nm) for nm in nw]
+    ng_s = [subset_label(nm) for nm in ng]
 
+    plt.rcParams.update({
+        "pdf.fonttype": 42, "ps.fonttype": 42,
+        "mathtext.fontset": "dejavusans",
+        "font.size": 20, "axes.titlesize": 24, "axes.labelsize": 22,
+        "xtick.labelsize": 20, "ytick.labelsize": 20, "legend.fontsize": 20,
+    })
+    tick_fs, title_fs = 20, 24
     cmap = plt.cm.RdBu_r
     vm = max(float(np.max(np.abs(np.stack([Ew, Thw, Eg, Thg])))), 1e-12)
     norm = Normalize(vmin=-vm, vmax=vm)
-    fig, ax = plt.subplots(1, 2, figsize=(10.6, 5.2))
-    if args.pretrained:
-        t_w2v, t_glove = "Word2Vec (Google News)", "GloVe (6B 300d)"
-    elif args.subsystem_only:
+    fig, ax = plt.subplots(1, 2, figsize=(12.4, 6.4))
+    if args.subsystem_only and not args.pretrained:
         t_w2v, t_glove = "Word2Vec (8 words)", "GloVe (8 words)"
     else:
         t_w2v, t_glove = "Word2Vec", "GloVe"
-    draw_overlay(ax[0], Ew, Thw, nw, ow, targets, norm, cmap, t_w2v)
-    draw_overlay(ax[1], Eg, Thg, ng, og, targets, norm, cmap, t_glove,
-                 ytick=False)
-    ax[0].legend([Line2D([0], [0], marker="s", color="none",
-                         markerfacecolor="0.35", markeredgecolor="none",
-                         ms=9),
-                  Line2D([0], [0], marker="s", color="none",
-                         markerfacecolor="none", markeredgecolor="0.35",
-                         markeredgewidth=2.2, ms=11)],
-                 ["empirical", "theory"], fontsize=8, loc="upper center",
-                 bbox_to_anchor=(1.05, -0.28), ncol=2, frameon=False)
-    fig.subplots_adjust(left=0.08, right=0.90, top=0.80, bottom=0.22,
-                        wspace=0.28)
+    draw_overlay(ax[0], Ew, Thw, nw_s, ow, targets, norm, cmap, t_w2v,
+                 xlabel=False, show_overlap=False,
+                 tick_fs=tick_fs, title_fs=title_fs, xtick_fs=20, xrot=45)
+    draw_overlay(ax[1], Eg, Thg, ng_s, og, targets, norm, cmap, t_glove,
+                 ytick=False, xlabel=False, show_overlap=False,
+                 tick_fs=tick_fs, title_fs=title_fs, xtick_fs=20, xrot=45)
+    fig.subplots_adjust(left=0.12, right=0.84, top=0.90, bottom=0.28,
+                        wspace=0.08)
+    fig.canvas.draw()
     p0, p1 = ax[0].get_position(), ax[1].get_position()
-    extras = []
-    if args.pretrained:
-        extras.append("pretrained")
-    if args.subsystem_only:
-        extras.append("subsystem only")
-    if ctag and not args.pretrained:
-        extras.append(ctag[1:])
-    fig.text(0.5 * (p0.x0 + p1.x1), p0.y1 + 0.07,
-             "(b) Boolean irreps follow"
-             + (f"  ({', '.join(extras)})" if extras else ""),
-             ha="center", va="bottom", fontsize=16, transform=fig.transFigure)
-    cax = fig.add_axes([p1.x1 + 0.012, p1.y0, 0.016, p1.height])
     sm = ScalarMappable(norm=norm, cmap=cmap)
     sm.set_array([])
-    fig.colorbar(sm, cax=cax)
+    cax = fig.add_axes([p1.x1 + 0.02, p1.y0, 0.02, p1.height])
+    cbar = fig.colorbar(sm, cax=cax)
+    cbar.ax.tick_params(labelsize=20)
+    h_emp = Line2D([0], [0], marker="s", color="none",
+                   markerfacecolor="0.35", markeredgecolor="none", ms=16)
+    h_th = Line2D([0], [0], marker="s", color="none",
+                  markerfacecolor="none", markeredgecolor="0.35",
+                  markeredgewidth=2.6, ms=18)
+    fig.legend([h_emp, h_th], ["empirical", "theory"],
+               loc="upper center", ncol=2, fontsize=22, frameon=False,
+               bbox_to_anchor=(0.5 * (p0.x0 + p1.x1), p0.y0 - 0.14),
+               bbox_transform=fig.transFigure)
     fig.savefig(f"{args.out}.pdf", bbox_inches="tight")
     fig.savefig(f"{args.out}.png", dpi=170, bbox_inches="tight")
     print(f"saved -> {args.out}.pdf/.png")
