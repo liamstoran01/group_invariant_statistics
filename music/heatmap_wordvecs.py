@@ -8,8 +8,9 @@ Word2Vec and GloVe trained from scratch on the Bach chorale sequences
 Theory (open circles) is unchanged: the leading D12 irrep mode of Bach
 M*, same as the Bach panel in heatmap_chordbert.py / heatmap_theory.py.
 Empirical (filled) is the leading 2D plane of the 24 triad vectors
-(top-2 eigenplane of the centered Gram). Orthogonal Procrustes plus a
-single isotropic scale aligns theory onto that plane.
+(top-2 eigenplane of the centered Gram). Orthogonal Procrustes aligns
+theory onto that plane; an isotropic scale is applied only for the
+figure (theory already carries sqrt(lam), so the predicted scale is 1).
 
 Also prints the appendix diagnostic: first 6 empirical dimensions vs the
 top-3 D12 theory modes, one orthogonal Procrustes per 2D plane, for each
@@ -25,7 +26,8 @@ Writes one two-panel figure (Word2Vec left, GloVe right):
 
 Usage:  python3 heatmap_wordvecs.py
             [--sequences chord_sequences_full.json] [--window 3]
-            [--dim 50] [--epochs 100] [--seed 0] [--out wordvec_planes]
+            [--dim 50] [--epochs 100] [--glove-max-iter 2000]
+            [--seed 0] [--out wordvec_planes]
 """
 import argparse
 import json
@@ -103,9 +105,13 @@ def train_word2vec(seqs, window, dim, epochs, seed, n_neg=5, lr=0.01):
     return X[:cl.N]
 
 
-def train_glove(seqs, window, dim, n_iter, seed, xmax=100.0, alpha=0.75,
-                lr=0.05):
-    """GloVe on the same symmetric windowed counts used for M*."""
+def train_glove(seqs, window, dim, seed, xmax=100.0, alpha=0.75, lr=0.05,
+                max_iter=2000, tol=1e-3, patience=5):
+    """GloVe on the same symmetric windowed counts used for M*.
+
+    AdaGrad until relative SSE drop < tol for `patience` steps (same
+    plateau rule as cube_wordvecs), capped at max_iter.
+    """
     V = max(max(s) for s in seqs) + 1
     C = cl.cooccurrence_counts(seqs, V, window)
     ii, jj = np.where(C > 0)
@@ -123,11 +129,20 @@ def train_glove(seqs, window, dim, n_iter, seed, xmax=100.0, alpha=0.75,
     gb = np.ones(V)
     gbt = np.ones(V)
     print(f"GloVe: {V} tokens, {len(x)} nonzero pairs, dim {dim}, "
-          f"{n_iter} iters, seed {seed}")
-    last = None
-    for it in range(n_iter):
+          f"max_iter {max_iter}, tol {tol:g}, seed {seed}")
+    sse_prev = None
+    flat = 0
+    last_it = 0
+    for it in range(max_iter):
         pred = np.sum(W[ii] * Wt[jj], 1) + b[ii] + bt[jj]
         diff = pred - logx
+        sse = float(np.sum(f * diff ** 2))
+        rel = (abs(sse_prev - sse) / max(sse_prev, 1e-12)
+               if sse_prev is not None else 1.0)
+        last_it = it + 1
+        if last_it <= 5 or last_it % 50 == 0:
+            print(f"  iter {last_it}/{max_iter}  weighted SSE {sse:.4g}  "
+                  f"rel {rel:.3g}")
         coef = 2.0 * f * diff
         dW = np.zeros_like(W)
         dWt = np.zeros_like(Wt)
@@ -145,9 +160,19 @@ def train_glove(seqs, window, dim, n_iter, seed, xmax=100.0, alpha=0.75,
         Wt -= lr * dWt / np.sqrt(gWt)
         b -= lr * db / np.sqrt(gb)
         bt -= lr * dbt / np.sqrt(gbt)
-        if it == 0 or (it + 1) % max(n_iter // 5, 1) == 0:
-            last = float(np.sum(f * diff ** 2))
-            print(f"  iter {it + 1}/{n_iter}  weighted SSE {last:.4g}")
+        sse_prev = sse
+        if rel < tol:
+            flat += 1
+            if flat >= patience:
+                print(f"  GloVe converged at iter {last_it}  "
+                      f"(rel SSE drop < {tol:g} for {patience} steps); "
+                      f"SSE {sse:.4g}")
+                break
+        else:
+            flat = 0
+    else:
+        print(f"  GloVe hit max_iter={max_iter}  (last rel {rel:.3g}); "
+              f"SSE {sse:.4g}")
     X = W[:cl.N] + Wt[:cl.N]
     missing = [i for i in range(cl.N) if C[i].sum() == 0]
     if missing:
@@ -163,12 +188,15 @@ def bach_theory_plane(M):
     return r, lam, Th
 
 
-def align_theory(Emp, Th):
-    """Orthogonal Procrustes, then isotropic scale (units differ)."""
-    R, _ = cl.procrustes(Emp, Th)
+def align_theory(Emp, Th, scale_plot=True):
+    """Orthogonal Procrustes. Theory predicts scale 1 (both sides are
+    V sqrt(lam)); an extra isotropic s is only for the figure."""
+    R, rel = cl.procrustes(Emp, Th)
     ThR = Th @ R
     s = float(np.sum(Emp * ThR) / max(np.sum(ThR * ThR), 1e-12))
-    return ThR * s, s
+    if scale_plot:
+        ThR = ThR * s
+    return ThR, s, rel
 
 
 def gram_coords(X, k):
@@ -228,13 +256,14 @@ def report_per_plane(name, X, M, k_planes=3):
     return Emp[:, :2], Th_aligned[:, :2]
 
 
-def fit_plane(name, X, M):
+def fit_plane(name, X, M, scale_plot=True):
     print(f"\n=== {name} ===")
     Emp, lam_e, _ = gram_coords(X, 2)
     r, lam, Th = bach_theory_plane(M)
-    Th, s = align_theory(Emp, Th)
+    Th, s, rel = align_theory(Emp, Th, scale_plot=scale_plot)
     mean, med, mn = chord_cosines(Emp, Th)
-    print(f"theory mode [{r}] lam {lam:+.2f}; scale {s:.4g}")
+    print(f"theory mode [{r}] lam {lam:+.2f}; plot scale {s:.4g} "
+          f"(cosine is scale-invariant); rel residual {rel:.3f}")
     print(f"empirical Gram eigs: {np.round(lam_e, 4)}")
     print(f"chord cos: mean {mean:.3f}, median {med:.3f}, min {mn:.3f}")
     return Emp, Th
@@ -289,7 +318,11 @@ def main():
     ap.add_argument("--dim", type=int, default=50,
                     help="Word2Vec / GloVe embedding dimension")
     ap.add_argument("--epochs", type=int, default=100,
-                    help="Word2Vec epochs and GloVe AdaGrad iterations")
+                    help="Word2Vec skip-gram epochs")
+    ap.add_argument("--glove-max-iter", type=int, default=2000,
+                    help="GloVe AdaGrad cap; stops early on SSE plateau")
+    ap.add_argument("--glove-tol", type=float, default=1e-3)
+    ap.add_argument("--glove-patience", type=int, default=5)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--k-planes", type=int, default=3,
                     help="theory / empirical planes for the cosine report "
@@ -324,7 +357,9 @@ def main():
               f"24x24 Gram will be weak")
 
     X_w = train_word2vec(seqs, args.window, args.dim, args.epochs, args.seed)
-    X_g = train_glove(seqs, args.window, args.dim, args.epochs, args.seed)
+    X_g = train_glove(seqs, args.window, args.dim, args.seed,
+                      max_iter=args.glove_max_iter, tol=args.glove_tol,
+                      patience=args.glove_patience)
     Emp_w, Th_w = fit_plane("Word2Vec", X_w, M)
     Emp_g, Th_g = fit_plane("GloVe", X_g, M)
     report_per_plane("Word2Vec", X_w, M, k_planes=args.k_planes)
